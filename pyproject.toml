@@ -1,0 +1,42 @@
+# =============================================================================
+# pyproject.toml
+# project metadata and dependencies
+#
+# PyTorch must be installed manually before running the command below,
+# because the correct build depends on your CUDA version.
+# See: https://pytorch.org/get-started/locally/
+#
+# Install the project (editable mode):
+#   pip install -e ".[dev]"
+# =============================================================================
+
+[build-system]
+requires = ["setuptools >= 68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "pinn-pipe-flow"
+version = "0.1.0"
+description = "Physics-Informed Neural Network for laminar flow in a circular pipe."
+requires-python = ">=3.10"
+
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "pyyaml",
+    "scipy",
+]
+
+[project.optional-dependencies]
+# Install with: pip install -e ".[dev]"
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+verbosity = 2
