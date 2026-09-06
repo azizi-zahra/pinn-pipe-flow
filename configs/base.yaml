@@ -1,0 +1,33 @@
+# =============================================================================
+# base.yaml -- default configuration for all experiments
+# Override any of these values in an experiment-specific config file.
+# =============================================================================
+
+physics:
+  R: 1.0            # pipe radius
+  mu: 1.0           # dynamic viscosity
+  u_max_range:
+    min: 0.5        # minimum u_max sampled during training
+    max: 2.0        # maximum u_max sampled during training
+
+model:
+  type: "mlp"
+  hidden_layer_depth: 3
+  hidden_layer_width: 32
+  activation: "tanh"
+
+sampling:
+  num_interior_points: 1000   # collocation points sampled inside the pipe
+
+training:
+  epochs: 4000
+  learning_rate: 1e-3
+  optimizer: "adam"
+  loss_weights:
+    physics: 1.0      # weight for PDE residual loss
+    bc_wall: 1.0      # weight for no-slip BC at r=R
+    bc_symmetry: 1.0  # weight for symmetry BC at r=0
+
+run:
+  seed: 42
+  dtype: "float64"
