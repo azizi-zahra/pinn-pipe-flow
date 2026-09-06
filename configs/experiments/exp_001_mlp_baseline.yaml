@@ -1,0 +1,10 @@
+# =============================================================================
+# exp_001_mlp_baseline.yaml -- baseline experiment using a simple MLP
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_001_mlp_baseline"
+  description: "Baseline MLP model with default settings. Reference point for all future experiments."
+
+overrides:
