@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from pinn_pipe.models.base import BasePINN
-from pinn_pipe.physics.pipe_flow import analytical_solution
-from pinn_pipe.utils.config import Config
+from pinn_pipe.models import BasePINN
+from pinn_pipe.physics import analytical_solution
+from pinn_pipe.utils import Config
 
 
 # u_max values used for evaluation plots

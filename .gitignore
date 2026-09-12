@@ -11,3 +11,6 @@ __pycache__/
 # Results are local only
 results/*
 !results/.gitkeep
+
+# pip
+*.egg-info/

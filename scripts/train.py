@@ -11,17 +11,21 @@ Usage:
 import argparse
 import os
 
-from pinn_pipe.evaluation.evaluator import (
+from pinn_pipe.evaluation import (
     compute_metrics,
     plot_error,
     plot_loss_curve,
     plot_velocity_profile,
 )
-from pinn_pipe.models.mlp import MLP
-from pinn_pipe.training.trainer import Trainer
-from pinn_pipe.utils.config import load_config, validate_config
-from pinn_pipe.utils.io import create_run_dir, save_metrics
-from pinn_pipe.utils.reproducibility import set_seed
+from pinn_pipe.models import MLP
+from pinn_pipe.training import Trainer
+from pinn_pipe.utils import (
+    create_run_dir,
+    load_config,
+    save_metrics,
+    set_seed,
+    validate_config,
+)
 
 
 def main() -> None:

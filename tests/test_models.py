@@ -7,9 +7,8 @@ Checks model construction, output shapes, repr, and error handling.
 import pytest
 import torch
 
-from pinn_pipe.models.base import BasePINN
-from pinn_pipe.models.mlp import MLP
-from pinn_pipe.utils.config import ModelConfig
+from pinn_pipe.models import BasePINN, MLP
+from pinn_pipe.utils import ModelConfig
 
 
 # -----------------------------------------------------------------------------

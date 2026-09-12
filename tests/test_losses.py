@@ -8,9 +8,14 @@ and that total_loss returns a correctly structured dictionary.
 import pytest
 import torch
 
-from pinn_pipe.models.mlp import MLP
-from pinn_pipe.training.losses import bc_wall_loss, bc_symmetry_loss, physics_loss, total_loss
-from pinn_pipe.utils.config import ModelConfig, PhysicsConfig, TrainingConfig
+from pinn_pipe.models import MLP
+from pinn_pipe.training import (
+    bc_symmetry_loss,
+    bc_wall_loss,
+    physics_loss,
+    total_loss,
+)
+from pinn_pipe.utils import ModelConfig, PhysicsConfig, TrainingConfig
 
 
 # -----------------------------------------------------------------------------

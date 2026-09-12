@@ -8,8 +8,8 @@ with correct shapes, ranges, and gradient settings.
 import pytest
 import torch
 
-from pinn_pipe.training.sampler import sample_bc, sample_interior
-from pinn_pipe.utils.config import PhysicsConfig, SamplingConfig
+from pinn_pipe.training import sample_bc, sample_interior
+from pinn_pipe.utils import PhysicsConfig, SamplingConfig
 
 
 # -----------------------------------------------------------------------------

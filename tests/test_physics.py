@@ -8,14 +8,14 @@ by checking that the exact solution satisfies all equations.
 import pytest
 import torch
 
-from pinn_pipe.physics.pipe_flow import (
+from pinn_pipe.models import MLP
+from pinn_pipe.physics import (
     analytical_solution,
     bc_symmetry,
     bc_wall,
     pde_residual,
 )
-from pinn_pipe.utils.config import ModelConfig, PhysicsConfig
-from pinn_pipe.models.mlp import MLP
+from pinn_pipe.utils import ModelConfig, PhysicsConfig
 
 
 # -----------------------------------------------------------------------------

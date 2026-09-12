@@ -7,11 +7,9 @@ and saving of all run artifacts.
 
 import torch
 
-from pinn_pipe.models.base import BasePINN
-from pinn_pipe.training.losses import total_loss
-from pinn_pipe.training.sampler import sample_bc, sample_interior
-from pinn_pipe.utils.config import Config
-from pinn_pipe.utils.io import save_config, save_history, save_model
+from pinn_pipe.models import BasePINN
+from pinn_pipe.training import sample_bc, sample_interior, total_loss
+from pinn_pipe.utils import Config, save_config, save_history, save_model
 
 
 class Trainer:

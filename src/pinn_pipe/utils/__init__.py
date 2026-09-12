@@ -5,7 +5,16 @@ Provides configuration loading/validation, autograd derivatives, artifact I/O,
 and seed initialization for reproducibility.
 """
 
-from pinn_pipe.utils.config import load_config, validate_config
+from pinn_pipe.utils.config import (
+    Config,
+    ModelConfig,
+    PhysicsConfig,
+    RunConfig,
+    SamplingConfig,
+    TrainingConfig,
+    load_config,
+    validate_config,
+)
 from pinn_pipe.utils.derivatives import grad, grad2
 from pinn_pipe.utils.io import (
     create_run_dir,
@@ -18,6 +27,12 @@ from pinn_pipe.utils.io import (
 from pinn_pipe.utils.reproducibility import set_seed
 
 __all__ = [
+    "Config",
+    "ModelConfig",
+    "PhysicsConfig",
+    "RunConfig",
+    "SamplingConfig",
+    "TrainingConfig",
     "create_run_dir",
     "grad",
     "grad2",

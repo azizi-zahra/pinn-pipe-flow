@@ -8,9 +8,9 @@ and returns a dictionary of all named loss values for logging.
 
 import torch
 
-from pinn_pipe.models.base import BasePINN
-from pinn_pipe.physics.pipe_flow import bc_wall, bc_symmetry, pde_residual
-from pinn_pipe.utils.config import PhysicsConfig, TrainingConfig
+from pinn_pipe.models import BasePINN
+from pinn_pipe.physics import bc_symmetry, bc_wall, pde_residual
+from pinn_pipe.utils import PhysicsConfig, TrainingConfig
 
 
 def physics_loss(
