@@ -1,0 +1,17 @@
+# =============================================================================
+# exp_002_lower_physics_weight.yaml -- reduced physics loss weight experiment
+# Tests whether reducing physics loss weight stabilizes training.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_002_lower_physics_weight"
+  description: "Reduce physics loss weight to 0.01 and lower learning rate to stabilize training."
+
+overrides:
+  training:
+    loss_weight_physics: 0.01
+    loss_weight_bc_wall: 1.0
+    loss_weight_bc_symmetry: 1.0
+    epochs: 8000
+    learning_rate: 0.0001
