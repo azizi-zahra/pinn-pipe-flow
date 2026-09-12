@@ -1,12 +1,12 @@
 # Codebase Overview: `pinn-pipe-flow`
 
-> *Documentation created with Gemini 3.8 Flash.*
+> *AI-assisted documentation*
 
 ---
 
 ## 1. Overview & Purpose
 
-This document provides a technical overview of the current codebase architecture for **reviewers and contributors**. It catalogs all modules, configurations, and core implementations completed to date for the `pinn-pipe-flow` Physics-Informed Neural Network (PINN) project, modeling steady laminar flow in a circular pipe (Hagen-Poiseuille).
+This document provides a technical overview of the current codebase architecture for **reviewers**. It catalogs all modules, configurations, and core implementations completed to date for the `pinn-pipe-flow` Physics-Informed Neural Network (PINN) project, modeling steady laminar flow in a circular pipe (Hagen-Poiseuille).
 
 ---
 
