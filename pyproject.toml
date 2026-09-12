@@ -39,4 +39,4 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-verbosity = 2
+verbose = true
