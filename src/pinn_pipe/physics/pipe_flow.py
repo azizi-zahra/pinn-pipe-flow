@@ -32,7 +32,7 @@ def pde_residual(model: BasePINN, r: torch.Tensor, u_max: torch.Tensor, config: 
     du_dr = grad(u, r)
     d2u_dr2 = grad2(u, r)
 
-    dp_dz = -2.0 * config.mu * u_max / config.R ** 2
+    dp_dz = -4.0 * config.mu * u_max / config.R ** 2
     residual = config.mu * (d2u_dr2 + (1 / r) * du_dr) - dp_dz
 
     return residual
