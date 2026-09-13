@@ -1,10 +1,10 @@
 # =============================================================================
-# exp_003_more_epochs.yaml -- tests whether more epochs improve the baseline.
+# exp_003_double_epochs.yaml -- tests whether more epochs improve the baseline.
 # All settings are inherited from base.yaml unless overridden below.
 # =============================================================================
 
 metadata:
-  name: "exp_003_more_epochs"
+  name: "exp_003_double_epochs"
   description: "Double the epochs from 4000 to 8000 to see if the model continues improving."
 
 overrides:
