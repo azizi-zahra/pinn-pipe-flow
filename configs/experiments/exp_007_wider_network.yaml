@@ -1,0 +1,14 @@
+# =============================================================================
+# exp_007_wider_network.yaml -- tests wider network (width 64) vs baseline.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_007_wider_network"
+  description: "Double the network width from 32 to 64 neurons, with 64000 epochs."
+
+overrides:
+  model:
+    hidden_layer_width: 64
+  training:
+    epochs: 64000
