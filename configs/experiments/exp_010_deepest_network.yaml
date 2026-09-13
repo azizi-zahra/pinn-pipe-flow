@@ -1,0 +1,14 @@
+# =============================================================================
+# exp_010_deepest_network.yaml -- tests even deeper network (depth 9) vs baseline.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_010_deepest_network"
+  description: "Triple the network depth from 3 to 9 layers, keeping width 32 and 64000 epochs."
+
+overrides:
+  model:
+    hidden_layer_depth: 9
+  training:
+    epochs: 64000
