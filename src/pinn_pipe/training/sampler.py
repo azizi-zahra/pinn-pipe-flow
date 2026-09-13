@@ -26,7 +26,7 @@ def sample_interior(
         r: Tensor of shape (N, 1) with requires_grad=True.
         u_max: Tensor of shape (N, 1) with sampled u_max values.
     """
-    r = torch.rand(n, 1) * R
+    r = torch.rand(n, 1) * (R - 0.01) + 0.01 # avoid sampling near zero
     r.requires_grad_(True)
 
     u_max = torch.rand(n, 1) * (u_max_max - u_max_min) + u_max_min
