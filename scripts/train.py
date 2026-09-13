@@ -81,6 +81,7 @@ def main() -> None:
     # -------------------------------------------------------------------------
     trainer = Trainer(model, config, run_dir)
     trainer.train()
+    
     trainer.save()
 
     # -------------------------------------------------------------------------
@@ -94,6 +95,7 @@ def main() -> None:
     # Compute and save metrics
     # -------------------------------------------------------------------------
     metrics = compute_metrics(model, config)
+    metrics["training_time_seconds"] = trainer.training_time
     save_metrics(metrics, run_dir)
 
     # -------------------------------------------------------------------------

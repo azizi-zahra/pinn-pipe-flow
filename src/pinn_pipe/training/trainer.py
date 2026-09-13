@@ -5,6 +5,8 @@ Manages the training loop, loss logging, progress printing,
 and saving of all run artifacts.
 """
 
+import time
+
 import torch
 
 from pinn_pipe.models import BasePINN
@@ -62,6 +64,7 @@ class Trainer:
         - Logs loss values to history
         - Prints progress every 500 epochs
         """
+        start_time = time.time()
         self.model.train()
 
         for epoch in range(1, self.config.training.epochs + 1):
@@ -116,6 +119,9 @@ class Trainer:
                     f"BC Wall: {losses['loss_bc_wall']:.4e} | "
                     f"BC Sym: {losses['loss_bc_symmetry']:.4e}"
                 )
+                
+        self.training_time = time.time() - start_time
+        print(f"Training completed in {self.training_time:.2f} seconds")
 
     def save(self) -> None:
         """Saves model weights, training history, and config to the run directory."""
