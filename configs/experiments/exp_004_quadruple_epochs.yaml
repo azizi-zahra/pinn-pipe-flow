@@ -1,0 +1,12 @@
+# =============================================================================
+# exp_004_quadruple_epochs.yaml -- tests whether even more epochs improve the baseline.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_004_quadruple_epochs"
+  description: "Quadruple the epochs from 8000 to 16000 to see if the model continues improving."
+
+overrides:
+  training:
+    epochs: 16000
