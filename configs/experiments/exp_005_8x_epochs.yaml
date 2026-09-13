@@ -1,0 +1,12 @@
+# =============================================================================
+# exp_005_8x_epochs.yaml -- tests whether 8x epochs improve over baseline.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_005_8x_epochs"
+  description: "8x the baseline epochs (32000) to find the plateau point."
+
+overrides:
+  training:
+    epochs: 32000
