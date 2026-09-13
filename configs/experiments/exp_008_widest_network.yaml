@@ -1,0 +1,14 @@
+# =============================================================================
+# exp_008_widest_network.yaml -- tests even wider network (width 128) vs baseline.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_008_widest_network"
+  description: "Quadruple the network width from 32 to 128 neurons, with 64000 epochs."
+
+overrides:
+  model:
+    hidden_layer_width: 128
+  training:
+    epochs: 64000
