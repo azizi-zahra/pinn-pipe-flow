@@ -21,13 +21,16 @@ import yaml
 def collect_runs(results_dir: str) -> list[dict]:
     """Scans results_dir and collects metrics and config from each run.
 
+    Keeps only the most recent run for each experiment name.
+
     Args:
         results_dir: Path to the results directory.
 
     Returns:
-        List of dicts, one per run, containing run name, config, and metrics.
+        List of dicts, one per experiment, containing the most recent run.
     """
-    runs = []
+    # collect all runs grouped by experiment name
+    runs_by_experiment = {}
 
     for run_name in sorted(os.listdir(results_dir)):
         run_dir = os.path.join(results_dir, run_name)
@@ -47,13 +50,19 @@ def collect_runs(results_dir: str) -> list[dict]:
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
 
-        runs.append({
+        # strip timestamp to get experiment name
+        # run_name format: exp_001_mlp_baseline_YYYYMMDD_HHMMSS
+        experiment_name = "_".join(run_name.split("_")[:-2])
+
+        runs_by_experiment[experiment_name] = {
             "run_name": run_name,
+            "experiment_name": experiment_name,
             "config": config,
             "metrics": metrics,
-        })
+        }
 
-    return runs
+    # return only the most recent run per experiment (sorted keeps last)
+    return list(runs_by_experiment.values())
 
 
 def save_comparison_table(runs: list[dict], results_dir: str) -> None:
@@ -70,7 +79,7 @@ def save_comparison_table(runs: list[dict], results_dir: str) -> None:
     output_path = os.path.join(results_dir, "comparison.csv")
 
     fieldnames = [
-        "run_name",
+        "experiment_name",
         "model_type",
         "hidden_layer_depth",
         "hidden_layer_width",
@@ -94,7 +103,7 @@ def save_comparison_table(runs: list[dict], results_dir: str) -> None:
             config = run["config"]
             metrics = run["metrics"]
             writer.writerow({
-                "run_name": run["run_name"],
+                "experiment_name": run["experiment_name"],
                 "model_type": config["model"]["type"],
                 "hidden_layer_depth": config["model"]["hidden_layer_depth"],
                 "hidden_layer_width": config["model"]["hidden_layer_width"],
@@ -124,14 +133,14 @@ def plot_comparison(runs: list[dict], results_dir: str) -> None:
         print("No runs found.")
         return
 
-    run_names = [run["run_name"] for run in runs]
+    experiment_names = [run["experiment_name"] for run in runs]
     l2_errors = [run["metrics"].get("l2_error", 0) for run in runs]
 
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.bar(run_names, l2_errors)
-    ax.set_xlabel("Run")
+    ax.bar(experiment_names, l2_errors)
+    ax.set_xlabel("Experiment")
     ax.set_ylabel("L2 Error")
-    ax.set_title("L2 Error Comparison Across Runs")
+    ax.set_title("L2 Error Comparison Across Experiments")
     ax.tick_params(axis="x", rotation=45)
     ax.grid(axis="y")
 
