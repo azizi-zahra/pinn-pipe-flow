@@ -23,11 +23,16 @@ The framework supports:
 | Category | File Path | Status | Primary Responsibility |
 | :--- | :--- | :---: | :--- |
 | **Project & Build** | [`README.md`](../README.md) | Completed | Project introduction, installation instructions, usage guide, and architecture diagram. |
+| | [`CHANGELOG.md`](../CHANGELOG.md) | Completed | Project changelog tracking bug fixes, physical corrections, and experiment iterations. |
 | | [`pyproject.toml`](../pyproject.toml) | Completed | Package metadata, dependencies (`numpy`, `matplotlib`, `pyyaml`, `scipy`), and pytest configuration. |
 | | [`.gitignore`](../.gitignore) | Completed | Excludes Python bytecode, cache, virtual environments, local artifacts, and test outputs. |
 | **Configuration** | [`configs/base.yaml`](../configs/base.yaml) | Completed | Global default parameters for physics, network architecture, sampling, optimizer, and seeds. |
 | | [`configs/experiments/exp_001_mlp_baseline.yaml`](../configs/experiments/exp_001_mlp_baseline.yaml) | Completed | Baseline experiment configuration inheriting all defaults from `base.yaml`. |
 | | [`configs/experiments/exp_002_lower_physics_weight.yaml`](../configs/experiments/exp_002_lower_physics_weight.yaml) | Completed | Experiment evaluating reduced physics loss weight (0.01), 8000 epochs, and lower learning rate (1e-4). |
+| | [`configs/experiments/exp_003_double_epochs.yaml`](../configs/experiments/exp_003_double_epochs.yaml) | Completed | Experiment evaluating 2x baseline training epochs (8,000 epochs) to assess convergence. |
+| | [`configs/experiments/exp_004_quadruple_epochs.yaml`](../configs/experiments/exp_004_quadruple_epochs.yaml) | Completed | Experiment evaluating 4x baseline training epochs (16,000 epochs) to evaluate error scaling. |
+| | [`configs/experiments/exp_005_8x_epochs.yaml`](../configs/experiments/exp_005_8x_epochs.yaml) | Completed | Experiment evaluating 8x baseline training epochs (32,000 epochs) to find the convergence plateau. |
+| | [`configs/experiments/exp_006_16x_epochs.yaml`](../configs/experiments/exp_006_16x_epochs.yaml) | Completed | Experiment evaluating 16x baseline training epochs (64,000 epochs) for extended asymptotic training. |
 | **Package Init** | [`src/pinn_pipe/__init__.py`](../src/pinn_pipe/__init__.py) | Completed | Root package docstring describing the PINN pipe flow library. |
 | | [`src/pinn_pipe/models/__init__.py`](../src/pinn_pipe/models/__init__.py) | Completed | Exposes public interfaces: `BasePINN`, `MLP`. |
 | | [`src/pinn_pipe/physics/__init__.py`](../src/pinn_pipe/physics/__init__.py) | Completed | Exposes public interfaces: `analytical_solution`, `bc_symmetry`, `bc_wall`, `pde_residual`. |
@@ -47,7 +52,8 @@ The framework supports:
 | | [`src/pinn_pipe/utils/reproducibility.py`](../src/pinn_pipe/utils/reproducibility.py) | Completed | Synchronous seed initialization across Python `random`, NumPy, and PyTorch (CPU/cuDNN). |
 | **Scripts** | [`scripts/train.py`](../scripts/train.py) | Completed | Command-line training pipeline: config loading, model building, training, evaluation, and saving. |
 | | [`scripts/compare_runs.py`](../scripts/compare_runs.py) | Completed | Scans results directory, aggregates metrics and configs into `comparison.csv` and `comparison.png`. |
-| **Test Suite** | [`tests/test_models.py`](../tests/test_models.py) | Completed | Unit tests for network construction, input/output tensors, shapes, and `__repr__`. |
+| **Test Suite** | [`tests/__init__.py`](../tests/__init__.py) | Completed | Test suite package initialization. |
+| | [`tests/test_models.py`](../tests/test_models.py) | Completed | Unit tests for network construction, input/output tensors, shapes, and `__repr__`. |
 | | [`tests/test_physics.py`](../tests/test_physics.py) | Completed | Unit tests for analytical solutions, boundary conditions, and PDE residual shapes. |
 | | [`tests/test_sampler.py`](../tests/test_sampler.py) | Completed | Unit tests for interior and boundary sampling shapes, bounds, and autograd flags. |
 | | [`tests/test_losses.py`](../tests/test_losses.py) | Completed | Unit tests verifying loss non-negativity, scalar types, and composite dictionary outputs. |
@@ -70,6 +76,9 @@ The framework supports:
   - Defines test dependencies: `pytest`, `pytest-cov`.
   - Configures pytest test discovery paths targeting `tests/`.
 
+- **[`CHANGELOG.md`](../CHANGELOG.md)**
+  - Documents project versions, changes, and fixes, notably documenting the resolution of the PDE residual $dp/dz$ factor (corrected from 2.0 to 4.0) and the boundary offset avoidance ($r \in [0.01, R]$) to eliminate the $1/r$ coordinate singularity.
+
 - **[`configs/base.yaml`](../configs/base.yaml)**
   - **Physics**: Pipe radius $R = 1.0$, dynamic viscosity $\mu = 1.0$, maximum velocity range $u_{\max} \in [0.5, 2.0]$.
   - **Model**: Architecture type `mlp`, depth `3`, width `32`, activation `tanh`.
@@ -84,6 +93,22 @@ The framework supports:
 - **[`configs/experiments/exp_002_lower_physics_weight.yaml`](../configs/experiments/exp_002_lower_physics_weight.yaml)**
   - Tests whether scaling down the physics residual loss weight relative to boundary conditions stabilizes training.
   - Overrides: `loss_weight_physics: 0.01`, `epochs: 8000`, `learning_rate: 0.0001`.
+
+- **[`configs/experiments/exp_003_double_epochs.yaml`](../configs/experiments/exp_003_double_epochs.yaml)**
+  - Tests whether doubling baseline training iterations improves accuracy while retaining baseline weights and learning rate.
+  - Overrides: `epochs: 8000`.
+
+- **[`configs/experiments/exp_004_quadruple_epochs.yaml`](../configs/experiments/exp_004_quadruple_epochs.yaml)**
+  - Evaluates error scaling behavior when quadrupling baseline training duration.
+  - Overrides: `epochs: 16000`.
+
+- **[`configs/experiments/exp_005_8x_epochs.yaml`](../configs/experiments/exp_005_8x_epochs.yaml)**
+  - Evaluates performance at 8x baseline training duration to identify the empirical convergence plateau.
+  - Overrides: `epochs: 32000`.
+
+- **[`configs/experiments/exp_006_16x_epochs.yaml`](../configs/experiments/exp_006_16x_epochs.yaml)**
+  - Assesses whether the power-law error halving persists through extended asymptotic training at 16x baseline duration.
+  - Overrides: `epochs: 64000`.
 
 ---
 
@@ -169,7 +194,7 @@ from pinn_pipe.utils import (
 - **[`src/pinn_pipe/physics/pipe_flow.py`](../src/pinn_pipe/physics/pipe_flow.py)**
   - `pde_residual(model, r, u_max, config)`: Evaluates the steady laminar Navier-Stokes momentum residual in cylindrical coordinates:
     $$\mathcal{R}_{\text{pde}} = \mu \left( \frac{\partial^2 u}{\partial r^2} + \frac{1}{r} \frac{\partial u}{\partial r} \right) - \frac{\partial p}{\partial z}$$
-    where $\frac{\partial p}{\partial z} = -\frac{2\mu u_{\max}}{R^2}$.
+    where $\frac{\partial p}{\partial z} = -\frac{4\mu u_{\max}}{R^2}$.
   - `bc_wall(model, r_bc, u_max)`: Computes the no-slip boundary condition residual at the wall:
     $$\mathcal{R}_{\text{wall}} = u(R) - 0$$
   - `bc_symmetry(model, r_bc, u_max)`: Computes the centerline symmetry residual at $r = 0$:
@@ -182,7 +207,7 @@ from pinn_pipe.utils import (
 ### 3.5 Training & Optimization (`pinn_pipe.training`)
 
 - **[`src/pinn_pipe/training/sampler.py`](../src/pinn_pipe/training/sampler.py)**
-  - `sample_interior(n, R, u_max_min, u_max_max)`: Samples $n$ radial points uniformly from $(0, R)$ with `requires_grad=True` and paired $u_{\max} \in [u_{\max,\min}, u_{\max,\max}]$.
+  - `sample_interior(n, R, u_max_min, u_max_max)`: Samples $n$ radial points uniformly from $[0.01, R]$ (using a lower bound of $0.01$ to avoid the numerical $1/r$ coordinate singularity at the pipe axis) with `requires_grad=True` and paired $u_{\max} \in [u_{\max,\min}, u_{\max,\max}]$.
   - `sample_bc(n, R, u_max_min, u_max_max)`: Generates paired boundary points for the wall ($r = R$) and centerline ($r = 0$) with `requires_grad=True`.
 
 - **[`src/pinn_pipe/training/losses.py`](../src/pinn_pipe/training/losses.py)**
@@ -194,7 +219,7 @@ from pinn_pipe.utils import (
 
 - **[`src/pinn_pipe/training/trainer.py`](../src/pinn_pipe/training/trainer.py)**
   - Class: `Trainer`
-  - Orchestrates the full training loop, Adam optimizer steps, epoch logging, periodic console progress reporting, and final artifact serialization (`save_config`, `save_history`, `save_model`).
+  - Orchestrates the full training loop, Adam optimizer steps, epoch history logging, console progress reporting (every 500 epochs and epoch 1), and final artifact serialization (`save_config`, `save_history`, `save_model`).
 
 ---
 
@@ -272,12 +297,33 @@ The test suite covers unit verification across all subsystems:
 
 ### 3.11 Experimental Results & Benchmark Runs (`results/`)
 
-The framework outputs all completed experiment runs to timestamped folders under `results/`:
+The framework outputs all completed experiment runs to timestamped folders under `results/`.
 
-| Run Directory | Experiment Config | Epochs | Learning Rate | Loss Weights ($w_{\text{pde}}, w_{\text{wall}}, w_{\text{sym}}$) | $L_2$ Error | Max Error | Relative $L_2$ Error |
+#### Benchmark Performance Summary
+
+The table below summarizes the latest benchmark evaluations following the resolution of the physical $dp/dz$ factor and axis singularity:
+
+| Run Directory / Experiment | Config File | Epochs | Learning Rate | Loss Weights ($w_{\text{pde}}, w_{\text{wall}}, w_{\text{sym}}$) | $L_2$ Error | Max Error | Relative $L_2$ Error |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| `exp_001_mlp_baseline_20260912_162424/` | `exp_001_mlp_baseline.yaml` | 4000 | 0.001 | (1.0, 1.0, 1.0) | 0.9153 | 1.2543 | 1.0111 |
-| `exp_002_lower_physics_weight_20260912_163528/` | `exp_002_lower_physics_weight.yaml` | 8000 | 0.0001 | (0.01, 1.0, 1.0) | 0.9046 | 1.2376 | 0.9950 |
+| `exp_001_mlp_baseline_20260913_141943/` | `exp_001_mlp_baseline.yaml` | 4,000 | 0.001 | (1.0, 1.0, 1.0) | 0.0241 | 0.0318 | 0.0491 (4.91%) |
+| `exp_002_lower_physics_weight_20260913_141932/` | `exp_002_lower_physics_weight.yaml` | 8,000 | 0.0001 | (1.0, 1.0, 1.0) | 0.0391 | 0.0500 | 0.0707 (7.07%) |
+| `exp_003_double_epochs_20260913_150339/` | `exp_003_double_epochs.yaml` | 8,000 | 0.001 | (1.0, 1.0, 1.0) | 0.0143 | 0.0170 | 0.0294 (2.94%) |
+| `exp_004_quardruple_epochs_20260913_150606/` | `exp_004_quadruple_epochs.yaml` | 16,000 | 0.001 | (1.0, 1.0, 1.0) | 0.0077 | 0.0083 | 0.0144 (1.44%) |
+| `exp_005_8x_epochs_20260913_155950/` | `exp_005_8x_epochs.yaml` | 32,000 | 0.001 | (1.0, 1.0, 1.0) | 0.0041 | 0.0046 | 0.0079 (0.79%) |
+| `exp_006_16x_epochs_20260913_160440/` | `exp_006_16x_epochs.yaml` | 64,000 | 0.001 | (1.0, 1.0, 1.0) | *Pending* | *Pending* | *Pending* |
+
+#### Key Empirical Insights
+
+1. **Epoch Scaling & Error Halving**:
+   Successive doubling of training iterations ($4\text{k} \to 8\text{k} \to 16\text{k} \to 32\text{k}$) exhibits consistent, power-law-like error halving:
+   - **4,000 epochs**: 4.91% relative $L_2$ error
+   - **8,000 epochs**: 2.94% relative $L_2$ error
+   - **16,000 epochs**: 1.44% relative $L_2$ error
+   - **32,000 epochs**: 0.79% relative $L_2$ error (sub-1% accuracy across all $u_{\max} \in [0.5, 2.0]$)
+2. **Learning Rate Sensitivity**:
+   Lowering the learning rate to `1e-4` in `exp_002` slowed convergence, resulting in higher error (7.07%) even after 8,000 epochs compared to the default `1e-3` rate at 4,000 epochs (4.91%).
+3. **Physical Formula & Singularity Corrections**:
+   Initial prototype runs (2026-09-12) had high error ($\approx 100\%$) due to two issues documented in [`CHANGELOG.md`](../CHANGELOG.md): an incorrect coefficient in $\partial p/\partial z$ (2 instead of 4) and numerical instability at $r \approx 0$ in the $1/r$ term. Addressing these reduced the baseline error by over $20\times$ immediately.
 
 Each run folder contains:
 - `config.yaml`: Merged configuration snapshot.
