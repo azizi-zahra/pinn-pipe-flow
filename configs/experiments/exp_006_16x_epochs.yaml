@@ -1,0 +1,12 @@
+# =============================================================================
+# exp_006_16x_epochs.yaml -- tests whether 16x epochs improve over baseline.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_006_16x_epochs"
+  description: "16x the baseline epochs (64000) to check if halving pattern continues or plateaus."
+
+overrides:
+  training:
+    epochs: 64000
