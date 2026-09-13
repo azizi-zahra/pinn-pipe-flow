@@ -267,3 +267,42 @@ PINN loss surfaces often suffer from gradient competition between the PDE residu
 
 - **Learning Rate**: For Adam, `1e-3` is a robust baseline. If the loss plateaus early or oscillates erratically, try reducing to `5e-4` or `1e-4` with longer epochs (e.g., 6,000–8,000).
 - **Epoch Count**: 4,000 epochs is typically enough for baseline convergence. Monitor `plots/loss_curve.png` to ensure losses have flattened before concluding training.
+
+---
+
+## 9. Completed Experiments
+
+### Phase 1 -- Epochs
+
+Epochs were varied systematically from 4,000 to 64,000 to analyze training convergence and error scaling. The $L_2$ error consistently halved with each doubling of epochs, and no convergence plateau was observed within this range. As a result, 64,000 epochs was chosen as the standard training duration for subsequent phases.
+
+| Experiment | Epochs | L2 Error |
+| :--- | :---: | :---: |
+| `exp_001` | 4000 | 0.0241 |
+| `exp_003` | 8000 | 0.0143 |
+| `exp_004` | 16000 | 0.0077 |
+| `exp_005` | 32000 | 0.0041 |
+| `exp_006` | 64000 | 0.0021 |
+
+### Phase 2 -- Architecture
+
+Network width and depth were evaluated independently while fixing training duration at 64,000 epochs:
+- **Width Variation**: Wider networks performed worse than the baseline width of 32. Because the 1D Hagen-Poiseuille problem is physically low-dimensional, wider layers introduced unnecessary capacity that impaired optimization.
+- **Depth Variation**: Increasing depth improved performance up to depth 6, beyond which accuracy degraded (likely due to vanishing gradients in deeper un-residualized architectures).
+
+| Experiment | Width | Depth | L2 Error |
+| :--- | :---: | :---: | :---: |
+| `exp_006` | 32 | 3 | 0.0021 |
+| `exp_007` | 64 | 3 | 0.0034 |
+| `exp_008` | 128 | 3 | 0.0081 |
+| `exp_009` | 32 | 6 | 0.0015 |
+| `exp_010` | 32 | 9 | 0.0044 |
+
+### Current Best
+
+The current best configuration is:
+- **Architecture**: Width = 32, Depth = 6
+- **Training**: Epochs = 64,000, Optimizer = Adam ($\text{lr} = 10^{-3}$)
+- **Performance**: $L_2$ Error = 0.0015
+
+Phase 3 will explore different optimizers (e.g., L-BFGS, hybrid Adam + L-BFGS) to further improve convergence and solution accuracy.
