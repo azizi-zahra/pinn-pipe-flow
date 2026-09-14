@@ -1,0 +1,16 @@
+# =============================================================================
+# exp_015_fewer_collocation_points.yaml -- tests fewer collocation points.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_015_fewer_collocation_points"
+  description: "Tests fewer collocation points compared to baseline."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 64000
+  sampling:
+    num_interior_points: 200
