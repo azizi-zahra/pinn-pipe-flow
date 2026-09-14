@@ -144,7 +144,7 @@ python scripts/compare_runs.py
 
 This scans `results/` and generates:
 - `results/comparison.csv`: Summary table listing hyperparameters and error metrics side by side.
-- `results/comparison.png`: Bar chart ranking models by overall $L_2$ error.
+- `results/comparison.png`: Horizontal bar chart ranking models by overall $L_2$ error with numeric annotations and gridlines.
 
 For a comprehensive guide on designing configurations and overriding parameters, see [`docs/experiments.md`](docs/experiments.md).
 
@@ -162,6 +162,12 @@ pytest
 
 ## Results
 
-*Results will be added here after experiments are complete.*
+A total of 17 systematic experiments across 6 phases (epochs, network architecture, optimizers, activation functions, collocation sampling, and loss weighting) were completed:
 
-Key evaluation figures from `results/` can be found in `docs/images/` once copied there.
+- **Best Overall Model**: [`exp_009_deeper_network`](configs/experiments/exp_009_deeper_network.yaml) (MLP with depth 6, width 32, Tanh activation, Adam optimizer, 64,000 epochs).
+- **Performance**:
+  - **$L_2$ Error**: `0.00155`
+  - **Maximum Absolute Error**: `0.00212`
+  - **Relative $L_2$ Error**: `0.24%` across all test velocities $u_{\max} \in [0.5, 2.0]$.
+
+For full comparison tables, empirical takeaways, and phase-by-phase breakdowns, see [`docs/experiments.md`](docs/experiments.md) and [`docs/codebase_overview.md`](docs/codebase_overview.md).

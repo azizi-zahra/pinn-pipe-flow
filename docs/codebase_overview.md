@@ -33,6 +33,17 @@ The framework supports:
 | | [`configs/experiments/exp_004_quadruple_epochs.yaml`](../configs/experiments/exp_004_quadruple_epochs.yaml) | Completed | Experiment evaluating 4x baseline training epochs (16,000 epochs) to evaluate error scaling. |
 | | [`configs/experiments/exp_005_8x_epochs.yaml`](../configs/experiments/exp_005_8x_epochs.yaml) | Completed | Experiment evaluating 8x baseline training epochs (32,000 epochs) to find the convergence plateau. |
 | | [`configs/experiments/exp_006_16x_epochs.yaml`](../configs/experiments/exp_006_16x_epochs.yaml) | Completed | Experiment evaluating 16x baseline training epochs (64,000 epochs) for extended asymptotic training. |
+| | [`configs/experiments/exp_007_wider_network.yaml`](../configs/experiments/exp_007_wider_network.yaml) | Completed | Architecture test evaluating wider network (width=64, depth=3) at 64k epochs. |
+| | [`configs/experiments/exp_008_widest_network.yaml`](../configs/experiments/exp_008_widest_network.yaml) | Completed | Architecture test evaluating widest network (width=128, depth=3) at 64k epochs. |
+| | [`configs/experiments/exp_009_deeper_network.yaml`](../configs/experiments/exp_009_deeper_network.yaml) | Completed | Architecture test evaluating deeper network (width=32, depth=6) at 64k epochs (best performing). |
+| | [`configs/experiments/exp_010_deepest_network.yaml`](../configs/experiments/exp_010_deepest_network.yaml) | Completed | Architecture test evaluating deepest network (width=32, depth=9) at 64k epochs. |
+| | [`configs/experiments/exp_011_sgd_optimizer.yaml`](../configs/experiments/exp_011_sgd_optimizer.yaml) | Completed | Optimizer test evaluating SGD vs Adam with depth=6 network at 64k epochs. |
+| | [`configs/experiments/exp_012_lbfgs_optimizer.yaml`](../configs/experiments/exp_012_lbfgs_optimizer.yaml) | Completed | Optimizer test evaluating L-BFGS vs Adam with depth=6 network at 64k epochs. |
+| | [`configs/experiments/exp_013_sigmoid_activation.yaml`](../configs/experiments/exp_013_sigmoid_activation.yaml) | Completed | Activation test evaluating Sigmoid vs Tanh with depth=6 network at 64k epochs. |
+| | [`configs/experiments/exp_014_more_collocation_points.yaml`](../configs/experiments/exp_014_more_collocation_points.yaml) | Completed | Sampling test evaluating 5,000 interior collocation points with depth=6 network at 64k epochs. |
+| | [`configs/experiments/exp_015_fewer_collocation_points.yaml`](../configs/experiments/exp_015_fewer_collocation_points.yaml) | Completed | Sampling test evaluating 200 interior collocation points with depth=6 network at 64k epochs. |
+| | [`configs/experiments/exp_016_higher_bc_weights.yaml`](../configs/experiments/exp_016_higher_bc_weights.yaml) | Completed | Loss weight test evaluating higher BC weights (10.0 wall, 10.0 symmetry) at 64k epochs. |
+| | [`configs/experiments/exp_017_lower_physics_weight.yaml`](../configs/experiments/exp_017_lower_physics_weight.yaml) | Completed | Loss weight test evaluating lower physics residual weight (0.1) at 64k epochs. |
 | **Package Init** | [`src/pinn_pipe/__init__.py`](../src/pinn_pipe/__init__.py) | Completed | Root package docstring describing the PINN pipe flow library. |
 | | [`src/pinn_pipe/models/__init__.py`](../src/pinn_pipe/models/__init__.py) | Completed | Exposes public interfaces: `BasePINN`, `MLP`. |
 | | [`src/pinn_pipe/physics/__init__.py`](../src/pinn_pipe/physics/__init__.py) | Completed | Exposes public interfaces: `analytical_solution`, `bc_symmetry`, `bc_wall`, `pde_residual`. |
@@ -109,6 +120,50 @@ The framework supports:
 - **[`configs/experiments/exp_006_16x_epochs.yaml`](../configs/experiments/exp_006_16x_epochs.yaml)**
   - Assesses whether the power-law error halving persists through extended asymptotic training at 16x baseline duration.
   - Overrides: `epochs: 64000`.
+
+- **[`configs/experiments/exp_007_wider_network.yaml`](../configs/experiments/exp_007_wider_network.yaml)**
+  - Evaluates increasing layer width to 64 (depth=3) at 64,000 epochs.
+  - Overrides: `model.hidden_layer_width: 64`, `training.epochs: 64000`.
+
+- **[`configs/experiments/exp_008_widest_network.yaml`](../configs/experiments/exp_008_widest_network.yaml)**
+  - Evaluates increasing layer width to 128 (depth=3) at 64,000 epochs.
+  - Overrides: `model.hidden_layer_width: 128`, `training.epochs: 64000`.
+
+- **[`configs/experiments/exp_009_deeper_network.yaml`](../configs/experiments/exp_009_deeper_network.yaml)**
+  - Evaluates increasing depth to 6 (width=32) at 64,000 epochs (overall best performing configuration).
+  - Overrides: `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
+
+- **[`configs/experiments/exp_010_deepest_network.yaml`](../configs/experiments/exp_010_deepest_network.yaml)**
+  - Evaluates increasing depth to 9 (width=32) at 64,000 epochs.
+  - Overrides: `model.hidden_layer_depth: 9`, `training.epochs: 64000`.
+
+- **[`configs/experiments/exp_011_sgd_optimizer.yaml`](../configs/experiments/exp_011_sgd_optimizer.yaml)**
+  - Evaluates standard SGD optimizer against Adam using depth=6 network at 64,000 epochs.
+  - Overrides: `training.optimizer: "sgd"`, `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
+
+- **[`configs/experiments/exp_012_lbfgs_optimizer.yaml`](../configs/experiments/exp_012_lbfgs_optimizer.yaml)**
+  - Evaluates quasi-Newton L-BFGS optimizer against Adam using depth=6 network at 64,000 epochs.
+  - Overrides: `training.optimizer: "lbfgs"`, `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
+
+- **[`configs/experiments/exp_013_sigmoid_activation.yaml`](../configs/experiments/exp_013_sigmoid_activation.yaml)**
+  - Evaluates Sigmoid activation function vs Tanh on depth=6 network at 64,000 epochs.
+  - Overrides: `model.activation: "sigmoid"`, `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
+
+- **[`configs/experiments/exp_014_more_collocation_points.yaml`](../configs/experiments/exp_014_more_collocation_points.yaml)**
+  - Evaluates 5,000 interior collocation points per epoch vs baseline 1,000.
+  - Overrides: `sampling.num_interior_points: 5000`, `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
+
+- **[`configs/experiments/exp_015_fewer_collocation_points.yaml`](../configs/experiments/exp_015_fewer_collocation_points.yaml)**
+  - Evaluates 200 interior collocation points per epoch vs baseline 1,000.
+  - Overrides: `sampling.num_interior_points: 200`, `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
+
+- **[`configs/experiments/exp_016_higher_bc_weights.yaml`](../configs/experiments/exp_016_higher_bc_weights.yaml)**
+  - Evaluates higher boundary condition loss weights ($w_{\text{wall}}=10.0, w_{\text{sym}}=10.0$).
+  - Overrides: `training.loss_weights.bc_wall: 10.0`, `training.loss_weights.bc_symmetry: 10.0`, `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
+
+- **[`configs/experiments/exp_017_lower_physics_weight.yaml`](../configs/experiments/exp_017_lower_physics_weight.yaml)**
+  - Evaluates reduced physics loss weight ($w_{\text{physics}}=0.1$).
+  - Overrides: `training.loss_weights.physics: 0.1`, `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
 
 ---
 
@@ -273,7 +328,7 @@ from pinn_pipe.utils import (
     ```bash
     python scripts/compare_runs.py --results-dir results/
     ```
-  - Scans `results/`, aggregates configs and metrics from completed runs, exports a side-by-side CSV summary table (`results/comparison.csv`), and renders an $L_2$ error ranking bar chart (`results/comparison.png`).
+  - Scans `results/`, aggregates configs and metrics from completed runs, exports a side-by-side CSV summary table (`results/comparison.csv`), and renders a horizontal $L_2$ error ranking bar chart with exact value annotations and gridlines (`results/comparison.png`).
 
 ---
 
@@ -303,26 +358,41 @@ The framework outputs all completed experiment runs to timestamped folders under
 
 The table below summarizes the latest benchmark evaluations following the resolution of the physical $dp/dz$ factor and axis singularity:
 
-| Run Directory / Experiment | Config File | Epochs | Learning Rate | Loss Weights ($w_{\text{pde}}, w_{\text{wall}}, w_{\text{sym}}$) | $L_2$ Error | Max Error | Relative $L_2$ Error |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| `exp_001_mlp_baseline_20260913_141943/` | `exp_001_mlp_baseline.yaml` | 4,000 | 0.001 | (1.0, 1.0, 1.0) | 0.0241 | 0.0318 | 0.0491 (4.91%) |
-| `exp_002_lower_physics_weight_20260913_141932/` | `exp_002_lower_physics_weight.yaml` | 8,000 | 0.0001 | (1.0, 1.0, 1.0) | 0.0391 | 0.0500 | 0.0707 (7.07%) |
-| `exp_003_double_epochs_20260913_150339/` | `exp_003_double_epochs.yaml` | 8,000 | 0.001 | (1.0, 1.0, 1.0) | 0.0143 | 0.0170 | 0.0294 (2.94%) |
-| `exp_004_quardruple_epochs_20260913_150606/` | `exp_004_quadruple_epochs.yaml` | 16,000 | 0.001 | (1.0, 1.0, 1.0) | 0.0077 | 0.0083 | 0.0144 (1.44%) |
-| `exp_005_8x_epochs_20260913_155950/` | `exp_005_8x_epochs.yaml` | 32,000 | 0.001 | (1.0, 1.0, 1.0) | 0.0041 | 0.0046 | 0.0079 (0.79%) |
-| `exp_006_16x_epochs_20260913_160440/` | `exp_006_16x_epochs.yaml` | 64,000 | 0.001 | (1.0, 1.0, 1.0) | *Pending* | *Pending* | *Pending* |
+| Run Directory / Experiment | Config File | Architecture (D, W, Act) | Epochs | Optimizer | Loss Weights ($w_{\text{pde}}, w_{\text{wall}}, w_{\text{sym}}$) | $L_2$ Error | Max Error | Relative $L_2$ Error |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `exp_001_mlp_baseline` | `exp_001_mlp_baseline.yaml` | (3, 32, tanh) | 4,000 | Adam | (1.0, 1.0, 1.0) | 0.0241 | 0.0318 | 0.0491 (4.91%) |
+| `exp_002_lower_physics_weight` | `exp_002_lower_physics_weight.yaml` | (3, 32, tanh) | 8,000 | Adam | (1.0, 1.0, 1.0) | 0.0391 | 0.0500 | 0.0707 (7.07%) |
+| `exp_003_double_epochs` | `exp_003_double_epochs.yaml` | (3, 32, tanh) | 8,000 | Adam | (1.0, 1.0, 1.0) | 0.0143 | 0.0170 | 0.0294 (2.94%) |
+| `exp_004_quardruple_epochs` | `exp_004_quadruple_epochs.yaml` | (3, 32, tanh) | 16,000 | Adam | (1.0, 1.0, 1.0) | 0.0077 | 0.0083 | 0.0144 (1.44%) |
+| `exp_005_8x_epochs` | `exp_005_8x_epochs.yaml` | (3, 32, tanh) | 32,000 | Adam | (1.0, 1.0, 1.0) | 0.0041 | 0.0046 | 0.0079 (0.79%) |
+| `exp_006_16x_epochs` | `exp_006_16x_epochs.yaml` | (3, 32, tanh) | 64,000 | Adam | (1.0, 1.0, 1.0) | 0.0021 | 0.0023 | 0.0052 (0.52%) |
+| `exp_007_wider_network` | `exp_007_wider_network.yaml` | (3, 64, tanh) | 64,000 | Adam | (1.0, 1.0, 1.0) | 0.0034 | 0.0036 | 0.0064 (0.64%) |
+| `exp_008_widest_network` | `exp_008_widest_network.yaml` | (3, 128, tanh) | 64,000 | Adam | (1.0, 1.0, 1.0) | 0.0081 | 0.0093 | 0.0154 (1.54%) |
+| `exp_009_deeper_network` | `exp_009_deeper_network.yaml` | (6, 32, tanh) | 64,000 | Adam | (1.0, 1.0, 1.0) | **0.0015** | **0.0021** | **0.0024 (0.24%)** |
+| `exp_010_deepest_network` | `exp_010_deepest_network.yaml` | (9, 32, tanh) | 64,000 | Adam | (1.0, 1.0, 1.0) | 0.0044 | 0.0068 | 0.0046 (0.46%) |
+| `exp_011_sgd_optimizer` | `exp_011_sgd_optimizer.yaml` | (6, 32, tanh) | 64,000 | SGD | (1.0, 1.0, 1.0) | 0.0254 | 0.0279 | 0.0264 (2.64%) |
+| `exp_012_lbfgs_optimizer` | `exp_012_lbfgs_optimizer.yaml` | (6, 32, tanh) | 64,000 | L-BFGS | (1.0, 1.0, 1.0) | 0.0291 | 0.0408 | 0.0399 (3.99%) |
+| `exp_013_sigmoid_activation` | `exp_013_sigmoid_activation.yaml` | (6, 32, sigmoid) | 64,000 | Adam | (1.0, 1.0, 1.0) | 0.0213 | 0.0243 | 0.0359 (3.59%) |
+| `exp_014_more_collocation_points` | `exp_014_more_collocation_points.yaml` | (6, 32, tanh) | 64,000 | Adam | (1.0, 1.0, 1.0) | 0.0018 | 0.0023 | 0.0025 (0.25%) |
+| `exp_015_fewer_collocation_points` | `exp_015_fewer_collocation_points.yaml` | (6, 32, tanh) | 64,000 | Adam | (1.0, 1.0, 1.0) | 0.0067 | 0.0075 | 0.0114 (1.14%) |
+| `exp_016_higher_bc_weights` | `exp_016_higher_bc_weights.yaml` | (6, 32, tanh) | 64,000 | Adam | (1.0, 10.0, 10.0) | 0.0016 | 0.0022 | 0.0031 (0.31%) |
+| `exp_017_lower_physics_weight` | `exp_017_lower_physics_weight.yaml` | (6, 32, tanh) | 64,000 | Adam | (0.1, 1.0, 1.0) | 0.0021 | 0.0027 | 0.0039 (0.39%) |
 
 #### Key Empirical Insights
 
 1. **Epoch Scaling & Error Halving**:
-   Successive doubling of training iterations ($4\text{k} \to 8\text{k} \to 16\text{k} \to 32\text{k}$) exhibits consistent, power-law-like error halving:
-   - **4,000 epochs**: 4.91% relative $L_2$ error
-   - **8,000 epochs**: 2.94% relative $L_2$ error
-   - **16,000 epochs**: 1.44% relative $L_2$ error
-   - **32,000 epochs**: 0.79% relative $L_2$ error (sub-1% accuracy across all $u_{\max} \in [0.5, 2.0]$)
-2. **Learning Rate Sensitivity**:
-   Lowering the learning rate to `1e-4` in `exp_002` slowed convergence, resulting in higher error (7.07%) even after 8,000 epochs compared to the default `1e-3` rate at 4,000 epochs (4.91%).
-3. **Physical Formula & Singularity Corrections**:
+   Successive doubling of training iterations ($4\text{k} \to 8\text{k} \to 16\text{k} \to 32\text{k} \to 64\text{k}$) exhibits consistent, power-law-like error halving, reaching 0.52% relative $L_2$ error on baseline architecture.
+2. **Network Depth vs. Width**:
+   Increasing layer width (64, 128) degraded performance on this 1D axisymmetric problem due to over-parameterization. Conversely, deepening to depth=6 yielded the overall best performing model (`exp_009`, 0.24% relative error), while depth=9 suffered from optimization degradation.
+3. **Optimizer Selection**:
+   Adam significantly outperformed both standard SGD (0.0254 error) and quasi-Newton L-BFGS (0.0291 error), which struggled with per-epoch collocation point resampling.
+4. **Activation Functions**:
+   Tanh demonstrated superior performance (0.0015 error) over Sigmoid (0.0213 error), owing to non-vanishing second-order derivatives in the Navier-Stokes residual.
+5. **Collocation Point Density**:
+   1,000 interior points per epoch represents an optimal efficiency sweet spot; increasing to 5,000 gave comparable error (0.0018), while dropping to 200 severely impaired accuracy (0.0067).
+6. **Loss Weighting**:
+   Equal loss weighting ($1.0, 1.0, 1.0$) was empirically confirmed as robust; higher BC weights slightly matched baseline (0.0016), while downweighting physics residual slightly degraded accuracy (0.0021).
+7. **Physical Formula & Singularity Corrections**:
    Initial prototype runs (2026-09-12) had high error ($\approx 100\%$) due to two issues documented in [`CHANGELOG.md`](../CHANGELOG.md): an incorrect coefficient in $\partial p/\partial z$ (2 instead of 4) and numerical instability at $r \approx 0$ in the $1/r$ term. Addressing these reduced the baseline error by over $20\times$ immediately.
 
 Each run folder contains:

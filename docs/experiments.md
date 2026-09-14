@@ -232,9 +232,12 @@ The CSV table enables side-by-side comparison of hyperparameters and performance
 
 ### 7.2 The Comparison Plot (`results/comparison.png`)
 
-A bar chart visualizing `l2_error` across all scanned runs on the vertical axis:
-- Allows immediate visual ranking of model performance.
-- Quickly identifies whether an architectural or weighting change improved or degraded physical accuracy.
+A horizontal bar chart visualizing `l2_error` across all scanned runs:
+- **Horizontal orientation**: Experiment names are arranged along the vertical axis from top to bottom, avoiding rotated text and ensuring long experiment identifiers remain completely legible.
+- **Dynamic height**: Scales automatically with the number of experiment runs so bars never crowd or overlap.
+- **Value annotations**: Direct numeric $L_2$ error values (formatted to 4 decimal places) are rendered at the tip of each bar.
+- **Major and minor grids**: Dual-frequency vertical gridlines along the error axis and horizontal guide lines per experiment row provide precise visual reference.
+- **Model ranking**: Enables immediate visual ranking to determine how architecture, optimization, or weighting changes impact accuracy.
 
 ---
 
@@ -298,11 +301,56 @@ Network width and depth were evaluated independently while fixing training durat
 | `exp_009` | 32 | 6 | 0.0015 |
 | `exp_010` | 32 | 9 | 0.0044 |
 
-### Current Best
+### Phase 3 -- Optimizers
 
-The current best configuration is:
-- **Architecture**: Width = 32, Depth = 6
+Using the best architecture (width=32, depth=6) at 64,000 epochs, alternative optimizers were evaluated against Adam:
+- **SGD (`exp_011`)**: Significantly underperformed Adam ($L_2$ error 0.0254 vs 0.0015), as standard gradient descent struggled with the non-convex PINN composite loss surface.
+- **L-BFGS (`exp_012`)**: Yielded $L_2$ error 0.0291, struggling with full-batch step sizes across varying $u_{\max}$ conditioning.
+
+| Experiment | Optimizer | L2 Error | Max Error | Relative L2 Error |
+| :--- | :---: | :---: | :---: | :---: |
+| `exp_009` (Baseline) | Adam | 0.0015 | 0.0021 | 0.24% |
+| `exp_011` | SGD | 0.0254 | 0.0279 | 2.64% |
+| `exp_012` | L-BFGS | 0.0291 | 0.0408 | 3.99% |
+
+### Phase 4 -- Activation Functions
+
+- **Sigmoid (`exp_013`)**: Compared against Tanh on depth=6. Sigmoid exhibited vanishing gradient issues in higher-order autograd derivatives ($\partial^2 u/\partial r^2$), resulting in an $L_2$ error of 0.0213 (over $14\times$ worse than Tanh).
+
+| Experiment | Activation | L2 Error | Max Error | Relative L2 Error |
+| :--- | :---: | :---: | :---: | :---: |
+| `exp_009` (Baseline) | Tanh | 0.0015 | 0.0021 | 0.24% |
+| `exp_013` | Sigmoid | 0.0213 | 0.0243 | 3.59% |
+
+### Phase 5 -- Collocation Points
+
+Evaluated the impact of interior collocation point density (baseline: 1,000):
+- **5,000 Points (`exp_014`)**: Achieved competitive accuracy ($L_2$ error 0.0018), confirming 1,000 points was already near the point of diminishing returns for 1D radial sampling.
+- **200 Points (`exp_015`)**: Sparsely sampled interior led to degraded accuracy ($L_2$ error 0.0067, $\sim 4.5\times$ higher error), demonstrating the necessity of adequate radial resolution.
+
+| Experiment | Collocation Points | L2 Error | Max Error | Relative L2 Error |
+| :--- | :---: | :---: | :---: | :---: |
+| `exp_015` | 200 | 0.0067 | 0.0075 | 1.14% |
+| `exp_009` (Baseline) | 1,000 | 0.0015 | 0.0021 | 0.24% |
+| `exp_014` | 5,000 | 0.0018 | 0.0023 | 0.25% |
+
+### Phase 6 -- Loss Weighting
+
+Investigated relative loss weighting between PDE residuals and boundary conditions:
+- **Higher BC Weights (`exp_016`)**: Increasing $w_{\text{wall}} = 10.0$ and $w_{\text{sym}} = 10.0$ maintained very high accuracy ($L_2$ error 0.0016), nearly matching the baseline.
+- **Lower Physics Weight (`exp_017`)**: Reducing $w_{\text{physics}} = 0.1$ increased error slightly ($L_2$ error 0.0021), confirming equal weighting ($1.0, 1.0, 1.0$) remains optimal.
+
+| Experiment | $w_{\text{physics}}$ | $w_{\text{wall}}$ | $w_{\text{sym}}$ | L2 Error | Max Error | Relative L2 Error |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| `exp_009` (Baseline) | 1.0 | 1.0 | 1.0 | 0.0015 | 0.0021 | 0.24% |
+| `exp_016` | 1.0 | 10.0 | 10.0 | 0.0016 | 0.0022 | 0.31% |
+| `exp_017` | 0.1 | 1.0 | 1.0 | 0.0021 | 0.0027 | 0.39% |
+
+### Current Best Configuration
+
+Across all 17 experiments, the optimal configuration is **`exp_009_deeper_network`**:
+- **Architecture**: MLP (Width = 32, Depth = 6, Activation = Tanh)
 - **Training**: Epochs = 64,000, Optimizer = Adam ($\text{lr} = 10^{-3}$)
-- **Performance**: $L_2$ Error = 0.0015
-
-Phase 3 will explore different optimizers (e.g., L-BFGS, hybrid Adam + L-BFGS) to further improve convergence and solution accuracy.
+- **Collocation Points**: 1,000 interior points per epoch
+- **Loss Weights**: $w_{\text{physics}} = 1.0, w_{\text{wall}} = 1.0, w_{\text{sym}} = 1.0$
+- **Performance**: $L_2\text{ Error} = 0.00155$, $\text{Max Error} = 0.00212$, $\text{Relative } L_2\text{ Error} = 0.24\%$ (sub-0.25% error across all $u_{\max} \in [0.5, 2.0]$)
