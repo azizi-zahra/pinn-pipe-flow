@@ -1,0 +1,19 @@
+# =============================================================================
+# exp_017_lower_physics_weight.yaml -- tests higher BC weights.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_017_lower_physics_weight"
+  description: "Tests lower physics weight compared to baseline."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 64000
+    loss_weights:
+      physics: 0.1     
+      bc_wall: 1.0      
+      bc_symmetry: 1.0
+  
