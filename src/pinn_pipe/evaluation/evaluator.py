@@ -36,7 +36,8 @@ def compute_metrics(model: BasePINN, config: Config) -> dict:
     """
     model.eval()
 
-    r = torch.linspace(0, config.physics.R, 1000).reshape(-1, 1)
+    device = next(model.parameters()).device
+    r = torch.linspace(0, config.physics.R, 1000).reshape(-1, 1).to(device)
 
     l2_errors = []
     max_errors = []
@@ -80,8 +81,9 @@ def plot_velocity_profile(
     """
     model.eval()
 
-    r = torch.linspace(0, config.physics.R, 1000).reshape(-1, 1)
-    r_np = r.detach().numpy()
+    device = next(model.parameters()).device
+    r = torch.linspace(0, config.physics.R, 1000).reshape(-1, 1).to(device)
+    r_np = r.detach().cpu().numpy()
 
     fig, ax = plt.subplots(figsize=(8, 5))
 
@@ -90,8 +92,8 @@ def plot_velocity_profile(
             u_max = torch.full_like(r, u_max_val)
 
             x = torch.cat([r, u_max], dim=1)
-            u_pred = model(x).detach().numpy()
-            u_exact = analytical_solution(r, u_max, config.physics.R).detach().numpy()
+            u_pred = model(x).detach().cpu().numpy()
+            u_exact = analytical_solution(r, u_max, config.physics.R).detach().cpu().numpy()
 
             color = ax._get_lines.get_next_color()
             ax.plot(r_np, u_exact, linestyle="--", color=color, label=f"Exact u_max={u_max_val}")
@@ -151,8 +153,9 @@ def plot_error(model: BasePINN, config: Config, run_dir: str) -> None:
     """
     model.eval()
 
-    r = torch.linspace(0, config.physics.R, 1000).reshape(-1, 1)
-    r_np = r.detach().numpy()
+    device = next(model.parameters()).device
+    r = torch.linspace(0, config.physics.R, 1000).reshape(-1, 1).to(device)
+    r_np = r.detach().cpu().numpy()
 
     fig, ax = plt.subplots(figsize=(8, 5))
 
@@ -164,7 +167,7 @@ def plot_error(model: BasePINN, config: Config, run_dir: str) -> None:
             u_pred = model(x)
             u_exact = analytical_solution(r, u_max, config.physics.R)
 
-            error = (u_pred - u_exact).abs().detach().numpy()
+            error = (u_pred - u_exact).abs().detach().cpu().numpy()
             ax.plot(r_np, error, label=f"u_max={u_max_val}")
 
     ax.set_xlabel("r")

@@ -21,13 +21,14 @@ class Trainer:
     logging, and saving of all run artifacts.
     """
 
-    def __init__(self, model: BasePINN, config: Config, run_dir: str) -> None:
+    def __init__(self, model: BasePINN, config: Config, run_dir: str, device: torch.device) -> None:
         """Initializes the Trainer with model, config, and run directory.
 
         Args:
             model: A BasePINN instance to train.
             config: Fully populated Config object for this run.
             run_dir: Path to the timestamped results directory for this run.
+            device: torch.device to use for training.
 
         Raises:
             ValueError: If the optimizer name in config is not supported.
@@ -36,6 +37,7 @@ class Trainer:
         self.config = config
         self.run_dir = run_dir
         self.history = []
+        self.device = device
 
         supported_optimizers = {
             "adam": torch.optim.Adam,
@@ -83,6 +85,13 @@ class Trainer:
                 u_max_min=self.config.physics.u_max_min,
                 u_max_max=self.config.physics.u_max_max,
             )
+            
+            # move tensors to device
+            r = r.to(self.device)
+            u_max = u_max.to(self.device)
+            r_wall = r_wall.to(self.device)
+            r_sym = r_sym.to(self.device)
+            u_max_bc = u_max_bc.to(self.device)
 
             if isinstance(self.optimizer, torch.optim.LBFGS):
                 def closure():

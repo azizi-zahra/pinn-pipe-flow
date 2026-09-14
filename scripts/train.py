@@ -6,6 +6,7 @@ evaluates results, and saves all artifacts to the run directory.
 
 Usage:
     python scripts/train.py --config configs/experiments/exp_001_mlp_baseline.yaml
+    python scripts/train.py --config configs/experiments/exp_001_mlp_baseline.yaml --device cuda
 """
 
 import argparse
@@ -23,6 +24,7 @@ from pinn_pipe.models import MLP
 from pinn_pipe.training import Trainer
 from pinn_pipe.utils import (
     create_run_dir,
+    get_device,
     load_config,
     save_config,
     save_metrics,
@@ -41,6 +43,12 @@ def main() -> None:
         type=str,
         required=True,
         help="Path to experiment config yaml file.",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default=None,
+        help="Device to use: 'cuda' or 'cpu'. Defaults to cpu.",
     )
     args = parser.parse_args()
     print(f"Loading config: {args.config}")
@@ -65,7 +73,7 @@ def main() -> None:
     print(f"Run directory: {run_dir}")
 
     # -------------------------------------------------------------------------
-    # Build model
+    # Build model and move to device
     # -------------------------------------------------------------------------
     supported_models = {
         "mlp": MLP,
@@ -77,13 +85,16 @@ def main() -> None:
             f"Choose from {list(supported_models.keys())}"
         )
 
+    device = get_device(args.device)
     model = supported_models[config.model.type](config.model)
+    model = model.to(device)
     print(f"Model: {model}")
+    print(f"Using device: {device}")
 
     # -------------------------------------------------------------------------
     # Train
     # -------------------------------------------------------------------------
-    trainer = Trainer(model, config, run_dir)
+    trainer = Trainer(model, config, run_dir, device)
     trainer.train()
     trainer.save()
 
@@ -99,6 +110,7 @@ def main() -> None:
     # -------------------------------------------------------------------------
     metrics = compute_metrics(model, config)
     metrics["training_time_seconds"] = trainer.training_time
+    metrics["device"] = str(device)
     save_metrics(metrics, run_dir)
 
     # -------------------------------------------------------------------------
@@ -106,7 +118,7 @@ def main() -> None:
     # -------------------------------------------------------------------------
     print("\n--- Results ---")
     for key, value in metrics.items():
-        print(f"  {key}: {value:.6f}")
+        print(f"  {key}: {value}")
     print(f"\nAll artifacts saved to: {run_dir}")
 
     # -------------------------------------------------------------------------
