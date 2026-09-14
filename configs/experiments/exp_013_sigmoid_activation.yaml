@@ -1,0 +1,15 @@
+# =============================================================================
+# exp_013_sigmoid_activation.yaml -- tests Sigmoid activation vs Tanh.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_013_sigmoid_activation"
+  description: "Tests Sigmoid activation function instead of Tanh."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+    activation: "sigmoid"
+  training:
+    epochs: 64000
