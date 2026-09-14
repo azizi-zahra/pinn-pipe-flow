@@ -84,22 +84,48 @@ class Trainer:
                 u_max_max=self.config.physics.u_max_max,
             )
 
-            # compute losses
-            losses = total_loss(
-                model=self.model,
-                r=r,
-                u_max=u_max,
-                r_wall=r_wall,
-                r_sym=r_sym,
-                u_max_bc=u_max_bc,
-                physics_config=self.config.physics,
-                training_config=self.config.training,
-            )
-
-            # backpropagation
-            self.optimizer.zero_grad()
-            losses["loss_total_tensor"].backward()
-            self.optimizer.step()
+            if isinstance(self.optimizer, torch.optim.LBFGS):
+                def closure():
+                    self.optimizer.zero_grad()
+                    losses = total_loss(
+                        model=self.model,
+                        r=r,
+                        u_max=u_max,
+                        r_wall=r_wall,
+                        r_sym=r_sym,
+                        u_max_bc=u_max_bc,
+                        physics_config=self.config.physics,
+                        training_config=self.config.training,
+                    )
+                    losses["loss_total_tensor"].backward()
+                    return losses["loss_total_tensor"]
+                self.optimizer.step(closure)
+                losses = total_loss(
+                    model=self.model,
+                    r=r,
+                    u_max=u_max,
+                    r_wall=r_wall,
+                    r_sym=r_sym,
+                    u_max_bc=u_max_bc,
+                    physics_config=self.config.physics,
+                    training_config=self.config.training,
+                )
+            else:    
+                # compute losses
+                losses = total_loss(
+                    model=self.model,
+                    r=r,
+                    u_max=u_max,
+                    r_wall=r_wall,
+                    r_sym=r_sym,
+                    u_max_bc=u_max_bc,
+                    physics_config=self.config.physics,
+                    training_config=self.config.training,
+                )
+                # backpropagation
+                self.optimizer.zero_grad()
+                losses["loss_total_tensor"].backward()
+                self.optimizer.step()
 
             # log history
             self.history.append({
