@@ -15,6 +15,7 @@ import json
 import os
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import yaml
 
 
@@ -136,18 +137,50 @@ def plot_comparison(runs: list[dict], results_dir: str) -> None:
     experiment_names = [run["experiment_name"] for run in runs]
     l2_errors = [run["metrics"].get("l2_error", 0) for run in runs]
 
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.bar(experiment_names, l2_errors)
-    ax.set_xlabel("Experiment")
-    ax.set_ylabel("L2 Error")
-    ax.set_title("L2 Error Comparison Across Experiments")
-    ax.tick_params(axis="x", rotation=45)
-    ax.grid(axis="y")
+    fig_height = max(6, len(runs) * 0.45)
+    fig, ax = plt.subplots(figsize=(10, fig_height))
+
+    bars = ax.barh(
+        experiment_names,
+        l2_errors,
+        color="#2b5c8f",
+        edgecolor="none",
+        height=0.65,
+    )
+    ax.invert_yaxis()  # Display first experiment at the top
+
+    ax.set_xlabel("L2 Error", fontsize=11)
+    ax.set_ylabel("Experiment", fontsize=11)
+    ax.set_title(
+        "L2 Error Comparison Across Experiments",
+        fontsize=13,
+        fontweight="bold",
+        pad=14,
+    )
+
+    # Grid lines (major and minor on X-axis, plus horizontal row guidelines on Y-axis)
+    ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
+    ax.grid(axis="x", which="major", linestyle="--", linewidth=0.8, alpha=0.6)
+    ax.grid(axis="x", which="minor", linestyle=":", linewidth=0.6, alpha=0.35)
+    ax.grid(axis="y", which="major", linestyle=":", linewidth=0.5, alpha=0.3)
+    ax.set_axisbelow(True)
+
+    # Annotate bars with numeric values
+    ax.bar_label(bars, fmt="%.4f", padding=5, fontsize=9)
+
+    # Add headroom on x-axis so value labels don't get clipped
+    if l2_errors:
+        max_val = max(l2_errors)
+        ax.set_xlim(0, max_val * 1.15 if max_val > 0 else 1.0)
+
+    # Clean styling: hide top and right spines
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
     plt.tight_layout()
 
     output_path = os.path.join(results_dir, "comparison.png")
-    fig.savefig(output_path, dpi=150, bbox_inches="tight")
+    fig.savefig(output_path, dpi=200, bbox_inches="tight")
     plt.close(fig)
 
     print(f"Comparison plot saved to: {output_path}")
