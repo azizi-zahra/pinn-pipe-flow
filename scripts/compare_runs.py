@@ -124,7 +124,10 @@ def save_comparison_table(runs: list[dict], results_dir: str) -> None:
 
 
 def plot_comparison(runs: list[dict], results_dir: str) -> None:
-    """Plots a bar chart comparing l2_error across all runs.
+    """Plots a horizontal bar chart comparing l2_error across all runs.
+
+    Uses a log scale on the x-axis so outlier experiments do not
+    dominate the plot and make good results unreadable.
 
     Args:
         runs: List of run dicts from collect_runs.
@@ -147,9 +150,12 @@ def plot_comparison(runs: list[dict], results_dir: str) -> None:
         edgecolor="none",
         height=0.65,
     )
-    ax.invert_yaxis()  # Display first experiment at the top
+    ax.invert_yaxis()
 
-    ax.set_xlabel("L2 Error", fontsize=11)
+    # log scale so outliers don't dominate
+    ax.set_xscale("log")
+
+    ax.set_xlabel("L2 Error (log scale)", fontsize=11)
     ax.set_ylabel("Experiment", fontsize=11)
     ax.set_title(
         "L2 Error Comparison Across Experiments",
@@ -158,22 +164,14 @@ def plot_comparison(runs: list[dict], results_dir: str) -> None:
         pad=14,
     )
 
-    # Grid lines (major and minor on X-axis, plus horizontal row guidelines on Y-axis)
     ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
     ax.grid(axis="x", which="major", linestyle="--", linewidth=0.8, alpha=0.6)
     ax.grid(axis="x", which="minor", linestyle=":", linewidth=0.6, alpha=0.35)
     ax.grid(axis="y", which="major", linestyle=":", linewidth=0.5, alpha=0.3)
     ax.set_axisbelow(True)
 
-    # Annotate bars with numeric values
     ax.bar_label(bars, fmt="%.4f", padding=5, fontsize=9)
 
-    # Add headroom on x-axis so value labels don't get clipped
-    if l2_errors:
-        max_val = max(l2_errors)
-        ax.set_xlim(0, max_val * 1.15 if max_val > 0 else 1.0)
-
-    # Clean styling: hide top and right spines
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
