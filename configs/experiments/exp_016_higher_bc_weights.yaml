@@ -1,0 +1,19 @@
+# =============================================================================
+# exp_016_higher_bc_weights.yaml -- tests higher BC weights.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_016_higher_bc_weights"
+  description: "Tests higher BC weights compared to baseline."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 64000
+    loss_weights:
+      physics: 1.0     
+      bc_wall: 10.0      
+      bc_symmetry: 10.0
+  
