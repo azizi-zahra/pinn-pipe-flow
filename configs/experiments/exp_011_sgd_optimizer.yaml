@@ -1,0 +1,15 @@
+# =============================================================================
+# exp_011_sgd_optimizer.yaml -- tests SGD optimizer vs Adam baseline.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_011_sgd_optimizer"
+  description: "Test SGD optimizer with best architecture (width=32, depth=6) and 64000 epochs."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 64000
+    optimizer: "sgd"
