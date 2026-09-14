@@ -1,0 +1,15 @@
+# =============================================================================
+# exp_018_lower_lr.yaml -- tests lower learning rate vs baseline.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_018_lower_lr"
+  description: "Lower learning rate to 0.0001 with best architecture (depth=6, 64000 epochs)."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 64000
+    learning_rate: 0.0001

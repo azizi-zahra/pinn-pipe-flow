@@ -1,0 +1,14 @@
+# =============================================================================
+# exp_021_longer_training.yaml -- tests longer training with best architecture.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_021_longer_training"
+  description: "Double epochs to 128000 with best architecture (depth=6) to check if improvement continues."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 128000

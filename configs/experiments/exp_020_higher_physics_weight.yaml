@@ -1,0 +1,15 @@
+# =============================================================================
+# exp_020_higher_physics_weight.yaml -- tests higher physics loss weight.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_020_higher_physics_weight"
+  description: "Higher physics loss weight (10.0) with best architecture (depth=6, 64000 epochs)."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 64000
+    loss_weight_physics: 10.0

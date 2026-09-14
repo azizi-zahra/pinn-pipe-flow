@@ -1,0 +1,15 @@
+# =============================================================================
+# exp_019_higher_lr.yaml -- tests higher learning rate vs baseline.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_019_higher_lr"
+  description: "Higher learning rate to 0.01 with best architecture (depth=6, 64000 epochs)."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 64000
+    learning_rate: 0.01
