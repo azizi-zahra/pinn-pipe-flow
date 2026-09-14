@@ -164,9 +164,7 @@ def plot_comparison(runs: list[dict], results_dir: str) -> None:
         pad=14,
     )
 
-    ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
     ax.grid(axis="x", which="major", linestyle="--", linewidth=0.8, alpha=0.6)
-    ax.grid(axis="x", which="minor", linestyle=":", linewidth=0.6, alpha=0.35)
     ax.grid(axis="y", which="major", linestyle=":", linewidth=0.5, alpha=0.3)
     ax.set_axisbelow(True)
 
