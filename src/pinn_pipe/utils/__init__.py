@@ -25,6 +25,7 @@ from pinn_pipe.utils.io import (
     save_model,
 )
 from pinn_pipe.utils.reproducibility import set_seed
+from pinn_pipe.utils.device import get_device
 
 __all__ = [
     "Config",
