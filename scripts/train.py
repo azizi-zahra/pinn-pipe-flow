@@ -11,6 +11,8 @@ Usage:
 import argparse
 import os
 
+from plyer import notification
+
 from pinn_pipe.evaluation import (
     compute_metrics,
     plot_error,
@@ -22,6 +24,7 @@ from pinn_pipe.training import Trainer
 from pinn_pipe.utils import (
     create_run_dir,
     load_config,
+    save_config,
     save_metrics,
     set_seed,
     validate_config,
@@ -54,10 +57,11 @@ def main() -> None:
     set_seed(config.run.seed)
 
     # -------------------------------------------------------------------------
-    # Create timestamped run directory
+    # Create timestamped run directory and save config
     # -------------------------------------------------------------------------
     experiment_name = os.path.splitext(os.path.basename(args.config))[0]
     run_dir = create_run_dir(experiment_name)
+    save_config(config, run_dir)
     print(f"Run directory: {run_dir}")
 
     # -------------------------------------------------------------------------
@@ -81,7 +85,6 @@ def main() -> None:
     # -------------------------------------------------------------------------
     trainer = Trainer(model, config, run_dir)
     trainer.train()
-    
     trainer.save()
 
     # -------------------------------------------------------------------------
@@ -105,6 +108,15 @@ def main() -> None:
     for key, value in metrics.items():
         print(f"  {key}: {value:.6f}")
     print(f"\nAll artifacts saved to: {run_dir}")
+
+    # -------------------------------------------------------------------------
+    # Notify user that training is complete
+    # -------------------------------------------------------------------------
+    notification.notify(
+        title="pinn-pipe-flow",
+        message=f"Training complete: {experiment_name}",
+    )
+    print("\a")
 
 
 if __name__ == "__main__":
