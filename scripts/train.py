@@ -124,10 +124,13 @@ def main() -> None:
     # -------------------------------------------------------------------------
     # Notify user that training is complete
     # -------------------------------------------------------------------------
-    notification.notify(
-        title="pinn-pipe-flow",
-        message=f"Training complete: {experiment_name}",
-    )
+    try:
+        notification.notify(
+            title="pinn-pipe-flow",
+            message=f"Training complete: {experiment_name}",
+        )
+    except NotImplementedError:
+        pass
     print("\a")
 
 
