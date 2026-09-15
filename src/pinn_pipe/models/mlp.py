@@ -13,6 +13,20 @@ from pinn_pipe.models.base import BasePINN
 from pinn_pipe.utils.config import ModelConfig
 
 
+class SinActivation(nn.Module):
+    """Sinusoidal activation function for PINNs (SIREN-style).
+    
+    Computes sin(omega * x), providing non-attenuating higher-order derivatives
+    suitable for physics-informed neural networks.
+    """
+    def __init__(self, omega: float = 1.0) -> None:
+        super().__init__()
+        self.omega = omega
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.sin(self.omega * x)
+
+
 class MLP(BasePINN, nn.Module):
     """Fully connected feedforward neural network for pipe flow velocity prediction.
     
@@ -37,7 +51,13 @@ class MLP(BasePINN, nn.Module):
         activations = {
             "tanh": nn.Tanh(),
             "relu": nn.ReLU(),
-            "sigmoid": nn.Sigmoid()
+            "sigmoid": nn.Sigmoid(),
+            "silu": nn.SiLU(),
+            "swish": nn.SiLU(),
+            "gelu": nn.GELU(),
+            "sin": SinActivation(),
+            "sine": SinActivation(),
+            "mish": nn.Mish(),
         }
         
         if config.activation not in activations:

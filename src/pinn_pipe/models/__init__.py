@@ -6,9 +6,12 @@ such as the fully-connected MLP.
 """
 
 from pinn_pipe.models.base import BasePINN
-from pinn_pipe.models.mlp import MLP
+from pinn_pipe.models.hard_bc import HardBCMLP
+from pinn_pipe.models.mlp import MLP, SinActivation
 
 __all__ = [
     "BasePINN",
+    "HardBCMLP",
     "MLP",
+    "SinActivation",
 ]
