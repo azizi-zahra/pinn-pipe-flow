@@ -11,6 +11,9 @@ from dataclasses import dataclass
 import yaml
 
 
+from typing import Any, Dict, Optional
+
+
 @dataclass
 class PhysicsConfig:
     R: float          # pipe radius
@@ -21,10 +24,12 @@ class PhysicsConfig:
 
 @dataclass
 class ModelConfig:
-    type: str               # model architecture, e.g. "mlp"
+    type: str               # model architecture, e.g. "mlp", "hard_bc_mlp"
     hidden_layer_depth: int
     hidden_layer_width: int
-    activation: str         # e.g. "tanh"
+    activation: str         # e.g. "tanh", "silu", "gelu", "sin", "mish"
+    hard_bc: bool = False   # if True, enforces exact no-slip and symmetry via ansatz
+    pipe_radius: float = 1.0
 
 
 @dataclass
@@ -36,10 +41,14 @@ class SamplingConfig:
 class TrainingConfig:
     epochs: int
     learning_rate: float
-    optimizer: str
+    optimizer: str          # "adam", "sgd", "lbfgs", "hybrid"
     loss_weight_physics: float
     loss_weight_bc_wall: float
     loss_weight_bc_symmetry: float
+    lr_scheduler: Optional[str] = None
+    lr_scheduler_params: Optional[Dict[str, Any]] = None
+    hybrid_switch_epoch: Optional[int] = None
+    lbfgs_learning_rate: Optional[float] = None
 
 
 @dataclass
@@ -104,6 +113,8 @@ def load_config(base_path: str, experiment_path: str) -> Config:
             hidden_layer_depth=base_data["model"]["hidden_layer_depth"],
             hidden_layer_width=base_data["model"]["hidden_layer_width"],
             activation=base_data["model"]["activation"],
+            hard_bc=base_data["model"].get("hard_bc", False),
+            pipe_radius=base_data["model"].get("pipe_radius", base_data["physics"]["R"]),
         ),
         sampling=SamplingConfig(
             num_interior_points=base_data["sampling"]["num_interior_points"],
@@ -115,6 +126,10 @@ def load_config(base_path: str, experiment_path: str) -> Config:
             loss_weight_physics=base_data["training"]["loss_weight_physics"],
             loss_weight_bc_wall=base_data["training"]["loss_weight_bc_wall"],
             loss_weight_bc_symmetry=base_data["training"]["loss_weight_bc_symmetry"],
+            lr_scheduler=base_data["training"].get("lr_scheduler", None),
+            lr_scheduler_params=base_data["training"].get("lr_scheduler_params", None),
+            hybrid_switch_epoch=base_data["training"].get("hybrid_switch_epoch", None),
+            lbfgs_learning_rate=base_data["training"].get("lbfgs_learning_rate", None),
         ),
         run=RunConfig(
             seed=base_data["run"]["seed"],
@@ -149,3 +164,27 @@ def validate_config(config: Config) -> None:
 
     if config.training.learning_rate <= 0:
         raise ValueError(f"learning_rate must be positive, got {config.training.learning_rate}")
+
+    valid_optimizers = ["adam", "sgd", "lbfgs", "hybrid", "hybrid_adam_lbfgs"]
+    if config.training.optimizer not in valid_optimizers:
+        raise ValueError(
+            f"optimizer must be one of {valid_optimizers}, got {config.training.optimizer}"
+        )
+
+    if config.training.lr_scheduler is not None:
+        valid_schedulers = [
+            "cosine", "cosine_annealing", "step", "multistep",
+            "multi_step", "plateau", "reduce_on_plateau", "exponential"
+        ]
+        if config.training.lr_scheduler.lower() not in valid_schedulers:
+            raise ValueError(
+                f"lr_scheduler must be one of {valid_schedulers}, "
+                f"got {config.training.lr_scheduler}"
+            )
+
+    if config.training.hybrid_switch_epoch is not None:
+        if not (0 < config.training.hybrid_switch_epoch < config.training.epochs):
+            raise ValueError(
+                f"hybrid_switch_epoch must be between 1 and epochs ({config.training.epochs}), "
+                f"got {config.training.hybrid_switch_epoch}"
+            )

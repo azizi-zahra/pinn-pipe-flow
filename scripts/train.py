@@ -20,7 +20,7 @@ from pinn_pipe.evaluation import (
     plot_loss_curve,
     plot_velocity_profile,
 )
-from pinn_pipe.models import MLP
+from pinn_pipe.models import HardBCMLP, MLP
 from pinn_pipe.training import Trainer
 from pinn_pipe.utils import (
     create_run_dir,
@@ -77,6 +77,7 @@ def main() -> None:
     # -------------------------------------------------------------------------
     supported_models = {
         "mlp": MLP,
+        "hard_bc_mlp": HardBCMLP,
     }
 
     if config.model.type not in supported_models:
@@ -86,7 +87,10 @@ def main() -> None:
         )
 
     device = get_device(args.device)
-    model = supported_models[config.model.type](config.model)
+    if config.model.type == "hard_bc_mlp" or getattr(config.model, "hard_bc", False):
+        model = HardBCMLP(config.model, R=config.physics.R)
+    else:
+        model = supported_models[config.model.type](config.model)
     model = model.to(device)
     print(f"Model: {model}")
     print(f"Using device: {device}")

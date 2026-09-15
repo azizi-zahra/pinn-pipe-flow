@@ -11,10 +11,11 @@ physics:
     max: 2.0        # maximum u_max sampled during training
 
 model:
-  type: "mlp"
+  type: "mlp"                   # architecture: "mlp" or "hard_bc_mlp"
   hidden_layer_depth: 3
   hidden_layer_width: 32
-  activation: "tanh"
+  activation: "tanh"            # "tanh", "relu", "sigmoid", "silu", "gelu", "sin", "mish"
+  hard_bc: false                # true to enforce hard Dirichlet and Neumann BCs via ansatz
 
 sampling:
   num_interior_points: 1000   # collocation points sampled inside the pipe
@@ -22,10 +23,14 @@ sampling:
 training:
   epochs: 4000
   learning_rate: 0.001
-  optimizer: "adam"
+  optimizer: "adam"             # "adam", "sgd", "lbfgs", "hybrid"
   loss_weight_physics: 1.0      # weight for PDE residual loss
-  loss_weight_bc_wall: 1.0      # weight for no-slip BC at r=R
-  loss_weight_bc_symmetry: 1.0  # weight for symmetry BC at r=0
+  loss_weight_bc_wall: 1.0      # weight for no-slip BC at r=R (set 0.0 if hard_bc is true)
+  loss_weight_bc_symmetry: 1.0  # weight for symmetry BC at r=0 (set 0.0 if hard_bc is true)
+  lr_scheduler: null            # "cosine", "step", "multistep", "plateau", "exponential", or null
+  lr_scheduler_params: {}       # scheduler-specific parameters
+  hybrid_switch_epoch: null     # epoch to switch from Adam to L-BFGS (if optimizer is "hybrid")
+  lbfgs_learning_rate: 1.0      # learning rate for L-BFGS phase (if optimizer is "hybrid")
 
 run:
   seed: 42
