@@ -1,0 +1,17 @@
+# =============================================================================
+# exp_025_cosine_lr.yaml -- tests cosine annealing learning rate scheduler.
+# Decays learning rate smoothly from 1e-3 down to 1e-6 over 64k epochs.
+# =============================================================================
+
+metadata:
+  name: "exp_025_cosine_lr"
+  description: "Test CosineAnnealingLR scheduler with best architecture (depth 6, width 32, 64k epochs)."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 64000
+    lr_scheduler: "cosine"
+    lr_scheduler_params:
+      eta_min: 0.000001

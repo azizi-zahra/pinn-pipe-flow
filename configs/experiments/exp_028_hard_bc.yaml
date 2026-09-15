@@ -1,0 +1,19 @@
+# =============================================================================
+# exp_028_hard_bc.yaml -- tests hard boundary condition enforcement (ansatz).
+# Guarantees no-slip at wall and symmetry at centerline by network construction,
+# allowing boundary condition loss weights to be eliminated (0.0).
+# =============================================================================
+
+metadata:
+  name: "exp_028_hard_bc"
+  description: "Test HardBCMLP ansatz strictly enforcing wall and symmetry boundary conditions."
+
+overrides:
+  model:
+    type: "hard_bc_mlp"
+    hidden_layer_depth: 6
+  training:
+    epochs: 64000
+    loss_weight_physics: 1.0
+    loss_weight_bc_wall: 0.0
+    loss_weight_bc_symmetry: 0.0

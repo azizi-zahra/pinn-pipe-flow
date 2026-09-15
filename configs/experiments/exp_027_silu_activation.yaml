@@ -1,0 +1,15 @@
+# =============================================================================
+# exp_027_silu_activation.yaml -- tests smooth SiLU (Swish) activation function.
+# Replaces tanh with SiLU (x * sigmoid(x)) to evaluate non-saturating smooth non-linearity.
+# =============================================================================
+
+metadata:
+  name: "exp_027_silu_activation"
+  description: "Test SiLU (Swish) smooth activation on best architecture (depth 6, width 32, 64k epochs)."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+    activation: "silu"
+  training:
+    epochs: 64000

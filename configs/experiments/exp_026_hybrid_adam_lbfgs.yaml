@@ -1,0 +1,17 @@
+# =============================================================================
+# exp_026_hybrid_adam_lbfgs.yaml -- tests hybrid Adam -> L-BFGS two-stage optimization.
+# Uses Adam for the first 50,000 epochs, then switches to L-BFGS for fine-tuning.
+# =============================================================================
+
+metadata:
+  name: "exp_026_hybrid_adam_lbfgs"
+  description: "Test hybrid optimizer: 50,000 epochs with Adam followed by L-BFGS second-order fine-tuning."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 64000
+    optimizer: "hybrid"
+    hybrid_switch_epoch: 50000
+    lbfgs_learning_rate: 1.0
