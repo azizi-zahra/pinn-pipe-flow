@@ -44,32 +44,47 @@ The framework supports:
 | | [`configs/experiments/exp_015_fewer_collocation_points.yaml`](../configs/experiments/exp_015_fewer_collocation_points.yaml) | Completed | Sampling test evaluating 200 interior collocation points with depth=6 network at 64k epochs. |
 | | [`configs/experiments/exp_016_higher_bc_weights.yaml`](../configs/experiments/exp_016_higher_bc_weights.yaml) | Completed | Loss weight test evaluating higher BC weights (10.0 wall, 10.0 symmetry) at 64k epochs. |
 | | [`configs/experiments/exp_017_lower_physics_weight.yaml`](../configs/experiments/exp_017_lower_physics_weight.yaml) | Completed | Loss weight test evaluating lower physics residual weight (0.1) at 64k epochs. |
+| | [`configs/experiments/exp_018_lower_lr.yaml`](../configs/experiments/exp_018_lower_lr.yaml) | Completed | Learning rate test evaluating 1e-4 vs baseline 1e-3 at 64k epochs. |
+| | [`configs/experiments/exp_019_higher_lr.yaml`](../configs/experiments/exp_019_higher_lr.yaml) | Completed | Learning rate test evaluating 1e-2 vs baseline 1e-3 at 64k epochs. |
+| | [`configs/experiments/exp_020_higher_physics_weight.yaml`](../configs/experiments/exp_020_higher_physics_weight.yaml) | Completed | Loss weight test evaluating higher physics residual weight (10.0) at 64k epochs. |
+| | [`configs/experiments/exp_021_longer_training.yaml`](../configs/experiments/exp_021_longer_training.yaml) | Completed | Extended duration test evaluating 128,000 epochs (2x 64k baseline). |
+| | [`configs/experiments/exp_022_physics_weight_5.yaml`](../configs/experiments/exp_022_physics_weight_5.yaml) | Completed | Loss weight test evaluating physics residual weight 5.0 at 64k epochs. |
+| | [`configs/experiments/exp_023_physics_weight_50.yaml`](../configs/experiments/exp_023_physics_weight_50.yaml) | Completed | Loss weight test evaluating physics residual weight 50.0 at 64k epochs. |
+| | [`configs/experiments/exp_024_physics_weight_100.yaml`](../configs/experiments/exp_024_physics_weight_100.yaml) | Completed | Loss weight test evaluating physics residual weight 100.0 at 64k epochs. |
+| | [`configs/experiments/exp_025_cosine_lr.yaml`](../configs/experiments/exp_025_cosine_lr.yaml) | Completed | Schedulers test evaluating CosineAnnealingLR decay (1e-3 to 1e-6) over 64k epochs. |
+| | [`configs/experiments/exp_026_hybrid_adam_lbfgs.yaml`](../configs/experiments/exp_026_hybrid_adam_lbfgs.yaml) | Completed | Hybrid optimizer test: 50,000 epochs Adam followed by 14,000 epochs L-BFGS fine-tuning. |
+| | [`configs/experiments/exp_027_silu_activation.yaml`](../configs/experiments/exp_027_silu_activation.yaml) | Completed | Activation test evaluating smooth SiLU (Swish) non-linearity at 64k epochs. |
+| | [`configs/experiments/exp_028_hard_bc.yaml`](../configs/experiments/exp_028_hard_bc.yaml) | Completed | Exact boundary ansatz test evaluating HardBCMLP with zero boundary loss weights. |
 | **Package Init** | [`src/pinn_pipe/__init__.py`](../src/pinn_pipe/__init__.py) | Completed | Root package docstring describing the PINN pipe flow library. |
-| | [`src/pinn_pipe/models/__init__.py`](../src/pinn_pipe/models/__init__.py) | Completed | Exposes public interfaces: `BasePINN`, `MLP`. |
+| | [`src/pinn_pipe/models/__init__.py`](../src/pinn_pipe/models/__init__.py) | Completed | Exposes public interfaces: `BasePINN`, `HardBCMLP`, `MLP`, `SinActivation`. |
 | | [`src/pinn_pipe/physics/__init__.py`](../src/pinn_pipe/physics/__init__.py) | Completed | Exposes public interfaces: `analytical_solution`, `bc_symmetry`, `bc_wall`, `pde_residual`. |
-| | [`src/pinn_pipe/training/__init__.py`](../src/pinn_pipe/training/__init__.py) | Completed | Exposes public interfaces: `Trainer`, `bc_symmetry_loss`, `bc_wall_loss`, `physics_loss`, `sample_bc`, `sample_interior`, `total_loss`. |
+| | [`src/pinn_pipe/training/__init__.py`](../src/pinn_pipe/training/__init__.py) | Completed | Exposes public interfaces: `Trainer`, `bc_symmetry_loss`, `bc_wall_loss`, `build_lr_scheduler`, `physics_loss`, `sample_bc`, `sample_interior`, `total_loss`. |
 | | [`src/pinn_pipe/evaluation/__init__.py`](../src/pinn_pipe/evaluation/__init__.py) | Completed | Exposes public interfaces: `compute_metrics`, `plot_error`, `plot_loss_curve`, `plot_velocity_profile`. |
-| | [`src/pinn_pipe/utils/__init__.py`](../src/pinn_pipe/utils/__init__.py) | Completed | Exposes public interfaces: `Config`, dataclasses (`ModelConfig`, `PhysicsConfig`, `RunConfig`, `SamplingConfig`, `TrainingConfig`), `load_config`, `validate_config`, `grad`, `grad2`, I/O utilities, and `set_seed`. |
+| | [`src/pinn_pipe/utils/__init__.py`](../src/pinn_pipe/utils/__init__.py) | Completed | Exposes public interfaces: `Config`, dataclasses (`ModelConfig`, `PhysicsConfig`, `RunConfig`, `SamplingConfig`, `TrainingConfig`), `load_config`, `validate_config`, `grad`, `grad2`, `get_device`, I/O utilities, and `set_seed`. |
 | **Models** | [`src/pinn_pipe/models/base.py`](../src/pinn_pipe/models/base.py) | Completed | Abstract base class (`BasePINN`) defining model contract `forward(x) -> u`. |
-| | [`src/pinn_pipe/models/mlp.py`](../src/pinn_pipe/models/mlp.py) | Completed | Fully connected network (`MLP`) with configurable width, depth, and activation functions. |
+| | [`src/pinn_pipe/models/mlp.py`](../src/pinn_pipe/models/mlp.py) | Completed | Fully connected network (`MLP`) and `SinActivation` with extended activations (`silu`, `gelu`, `sin`, `mish`). |
+| | [`src/pinn_pipe/models/hard_bc.py`](../src/pinn_pipe/models/hard_bc.py) | Completed | Hard boundary condition ansatz model (`HardBCMLP`) guaranteeing exact wall no-slip and symmetry. |
 | **Physics** | [`src/pinn_pipe/physics/pipe_flow.py`](../src/pinn_pipe/physics/pipe_flow.py) | Completed | Governing Navier-Stokes PDE residual, wall no-slip BC, symmetry BC, and analytical solution. |
 | **Training** | [`src/pinn_pipe/training/sampler.py`](../src/pinn_pipe/training/sampler.py) | Completed | Uniform sampling of interior collocation points and boundary points with autograd gradient tracking. |
 | | [`src/pinn_pipe/training/losses.py`](../src/pinn_pipe/training/losses.py) | Completed | Mean squared residual loss terms (PDE, wall BC, symmetry BC) and composite weighted loss. |
-| | [`src/pinn_pipe/training/trainer.py`](../src/pinn_pipe/training/trainer.py) | Completed | Training loop coordinator: optimizer execution, progress logging, and artifact persistence. |
+| | [`src/pinn_pipe/training/scheduler.py`](../src/pinn_pipe/training/scheduler.py) | Completed | PyTorch LR scheduler factory (`build_lr_scheduler`) supporting Cosine, Step, MultiStep, Exponential, Plateau. |
+| | [`src/pinn_pipe/training/trainer.py`](../src/pinn_pipe/training/trainer.py) | Completed | Training loop coordinator: optimizer execution, hybrid Adam-to-L-BFGS transitions, and LR scheduling. |
 | **Evaluation** | [`src/pinn_pipe/evaluation/evaluator.py`](../src/pinn_pipe/evaluation/evaluator.py) | Completed | Computes error metrics ($L_2$, maximum, relative $L_2$) and renders diagnostic plots. |
-| **Utilities** | [`src/pinn_pipe/utils/config.py`](../src/pinn_pipe/utils/config.py) | Completed | Strongly typed config dataclasses, hierarchical YAML loader, and sanity validation. |
+| **Utilities** | [`src/pinn_pipe/utils/config.py`](../src/pinn_pipe/utils/config.py) | Completed | Strongly typed config dataclasses, hierarchical YAML loader, and sanity validation for all features. |
 | | [`src/pinn_pipe/utils/derivatives.py`](../src/pinn_pipe/utils/derivatives.py) | Completed | Autograd derivative wrappers for first (`grad`) and second (`grad2`) partial derivatives. |
+| | [`src/pinn_pipe/utils/device.py`](../src/pinn_pipe/utils/device.py) | Completed | Hardware accelerator resolution utility (`get_device`) for CUDA and CPU target environments. |
 | | [`src/pinn_pipe/utils/io.py`](../src/pinn_pipe/utils/io.py) | Completed | Run directory management, metric serialization (`json`), history logging (`csv`), and model weights. |
 | | [`src/pinn_pipe/utils/reproducibility.py`](../src/pinn_pipe/utils/reproducibility.py) | Completed | Synchronous seed initialization across Python `random`, NumPy, and PyTorch (CPU/cuDNN). |
-| **Scripts** | [`scripts/train.py`](../scripts/train.py) | Completed | Command-line training pipeline: config loading, model building, training, evaluation, and saving. |
+| **Scripts** | [`scripts/train.py`](../scripts/train.py) | Completed | Command-line training pipeline supporting device selection, HardBCMLP instantiation, and artifact saving. |
 | | [`scripts/compare_runs.py`](../scripts/compare_runs.py) | Completed | Scans results directory, aggregates metrics and configs into `comparison.csv` and `comparison.png`. |
 | **Test Suite** | [`tests/__init__.py`](../tests/__init__.py) | Completed | Test suite package initialization. |
-| | [`tests/test_models.py`](../tests/test_models.py) | Completed | Unit tests for network construction, input/output tensors, shapes, and `__repr__`. |
+| | [`tests/test_models.py`](../tests/test_models.py) | Completed | Unit tests for network construction, activations, output shapes, and HardBCMLP boundary conditions. |
 | | [`tests/test_physics.py`](../tests/test_physics.py) | Completed | Unit tests for analytical solutions, boundary conditions, and PDE residual shapes. |
 | | [`tests/test_sampler.py`](../tests/test_sampler.py) | Completed | Unit tests for interior and boundary sampling shapes, bounds, and autograd flags. |
 | | [`tests/test_losses.py`](../tests/test_losses.py) | Completed | Unit tests verifying loss non-negativity, scalar types, and composite dictionary outputs. |
+| | [`tests/test_schedulers.py`](../tests/test_schedulers.py) | Completed | Unit tests verifying scheduler factory behavior, step updates, and hybrid optimizer transitions. |
 | **Documentation** | [`docs/codebase_overview.md`](codebase_overview.md) | Completed | Architectural and file-by-file catalog of the repository. |
-| | [`docs/physics.md`](physics.md) | Completed | Detailed derivation of Hagen-Poiseuille flow, force balances, and boundary conditions. |
+| | [`docs/physics.md`](physics.md) | Completed | Detailed derivation of Hagen-Poiseuille flow, force balances, and boundary condition formulations. |
 | | [`docs/experiments.md`](experiments.md) | Completed | Guide for creating, running, saving, and comparing experiment runs. |
 
 ---
@@ -173,7 +188,7 @@ All subpackages implement explicit public API exposure via `__init__.py` files t
 
 ```python
 # Models
-from pinn_pipe.models import BasePINN, MLP
+from pinn_pipe.models import BasePINN, HardBCMLP, MLP, SinActivation
 
 # Physics
 from pinn_pipe.physics import (
@@ -188,6 +203,7 @@ from pinn_pipe.training import (
     Trainer,
     bc_symmetry_loss,
     bc_wall_loss,
+    build_lr_scheduler,
     physics_loss,
     sample_bc,
     sample_interior,
@@ -211,6 +227,7 @@ from pinn_pipe.utils import (
     SamplingConfig,
     TrainingConfig,
     create_run_dir,
+    get_device,
     grad,
     grad2,
     load_config,
@@ -239,8 +256,15 @@ from pinn_pipe.utils import (
   - Fully connected feedforward architecture:
     $$\text{Linear}(2, W) \to \left[ \sigma \to \text{Linear}(W, W) \right]^D \to \sigma \to \text{Linear}(W, 1)$$
     where $W$ is `hidden_layer_width` and $D$ is `hidden_layer_depth`.
-  - Supported activation functions ($\sigma$): `tanh`, `relu`, `sigmoid`.
+  - Supported activation functions ($\sigma$): `tanh`, `relu`, `sigmoid`, `silu` (`swish`), `gelu`, `sin` / `sine` (`SinActivation`), and `mish`.
+  - Class: `SinActivation(nn.Module)`: SIREN-style $\sin(\omega x)$ activation providing non-vanishing higher-order derivatives for PINNs.
   - Implements `__repr__` for human-readable architecture inspection.
+
+- **[`src/pinn_pipe/models/hard_bc.py`](../src/pinn_pipe/models/hard_bc.py)**
+  - Class: `HardBCMLP(BasePINN, nn.Module)`
+  - Physics-informed ansatz model strictly enforcing Dirichlet wall no-slip $u(R) = 0$ and Neumann centerline symmetry $\frac{\partial u}{\partial r}(0) = 0$ boundary conditions:
+    $$\hat{u}(r, u_{\max}) = u_{\max}\left(1 - \frac{r^2}{R^2}\right) + \left(1 - \frac{r^2}{R^2}\right)\left(\frac{r^2}{R^2}\right)\text{Trunk}(r, u_{\max})$$
+  - Eliminates boundary violation error by design and allows setting boundary loss weights to zero ($w_{\text{wall}} = 0.0, w_{\text{sym}} = 0.0$).
 
 ---
 
@@ -272,9 +296,12 @@ from pinn_pipe.utils import (
   - `total_loss(...)`: Weighted sum returning the scalar loss tensor for backpropagation along with a dictionary of detached float metrics:
     $$\mathcal{L}_{\text{total}} = w_{\text{pde}}\mathcal{L}_{\text{pde}} + w_{\text{wall}}\mathcal{L}_{\text{wall}} + w_{\text{sym}}\mathcal{L}_{\text{sym}}$$
 
+- **[`src/pinn_pipe/training/scheduler.py`](../src/pinn_pipe/training/scheduler.py)**
+  - `build_lr_scheduler(optimizer, scheduler_type, total_epochs, params)`: Instantiates PyTorch learning rate schedulers (`CosineAnnealingLR`, `StepLR`, `MultiStepLR`, `ExponentialLR`, `ReduceLROnPlateau`).
+
 - **[`src/pinn_pipe/training/trainer.py`](../src/pinn_pipe/training/trainer.py)**
   - Class: `Trainer`
-  - Orchestrates the full training loop, Adam optimizer steps, epoch history logging, console progress reporting (every 500 epochs and epoch 1), and final artifact serialization (`save_config`, `save_history`, `save_model`).
+  - Orchestrates the training loop, multi-optimizer execution (Adam, SGD, L-BFGS, or hybrid), learning rate scheduler updates, dynamic hybrid switching (Adam $\to$ L-BFGS at `hybrid_switch_epoch`), progress printing, wall-clock timing, and artifact persistence (`save_config`, `save_history`, `save_model`).
 
 ---
 
@@ -295,6 +322,7 @@ from pinn_pipe.utils import (
 
 - **[`src/pinn_pipe/utils/config.py`](../src/pinn_pipe/utils/config.py)**
   - Strongly typed dataclasses: `PhysicsConfig`, `ModelConfig`, `SamplingConfig`, `TrainingConfig`, `RunConfig`, and `Config`.
+  - Extended configuration support for hard boundary conditions (`hard_bc`, `pipe_radius`), learning rate schedulers (`lr_scheduler`, `lr_scheduler_params`), and hybrid optimization (`hybrid_switch_epoch`, `lbfgs_learning_rate`).
   - `load_config(base_path, experiment_path)`: Deep-merges experiment-specific overrides into baseline configurations.
   - `validate_config(config)`: Enforces positivity of physical constants ($R > 0$, $\mu > 0$), valid parameter ranges ($u_{\max,\min} < u_{\max,\max}$), and positive epochs/learning rates.
 
@@ -302,10 +330,13 @@ from pinn_pipe.utils import (
   - `grad(output, input)`: First partial derivative $\frac{\partial u}{\partial r}$ via `torch.autograd.grad(create_graph=True)`.
   - `grad2(output, input)`: Second partial derivative $\frac{\partial^2 u}{\partial r^2}$ computed by differentiating the first derivative graph.
 
+- **[`src/pinn_pipe/utils/device.py`](../src/pinn_pipe/utils/device.py)**
+  - `get_device(device_str)`: Hardware accelerator target resolution (`"cuda"`, `"cpu"`, or auto-detection).
+
 - **[`src/pinn_pipe/utils/io.py`](../src/pinn_pipe/utils/io.py)**
   - `create_run_dir(experiment_name, results_dir)`: Generates timestamped run directories (`results/<experiment>_YYYYMMDD_HHMMSS/plots/`).
   - `save_config(config, run_dir)`: Exports merged configuration to `config.yaml`.
-  - `save_metrics(metrics, run_dir)`: Writes evaluation metrics dictionary to `metrics.json`.
+  - `save_metrics(metrics, run_dir)`: Writes evaluation metrics dictionary to `metrics.json` (including `training_time_seconds`).
   - `save_history(history, run_dir)`: Serializes epoch-by-epoch loss records to `history.csv`.
   - `save_model(model, run_dir)` / `load_model(model, run_dir)`: Saves and loads model state dictionary (`model.pt`).
 
@@ -317,9 +348,9 @@ from pinn_pipe.utils import (
 ### 3.8 Execution Scripts (`scripts/`)
 
 - **[`scripts/train.py`](../scripts/train.py)**
-  - Main training pipeline executable:
+  - Main training pipeline executable supporting device selection and architecture dispatch (`MLP` or `HardBCMLP`):
     ```bash
-    python scripts/train.py --config configs/experiments/exp_001_mlp_baseline.yaml
+    python scripts/train.py --config configs/experiments/exp_001_mlp_baseline.yaml --device cuda
     ```
   - Loads configuration, sets seeds, creates run directories, trains the model, renders evaluation plots, evaluates quantitative metrics, and saves all run artifacts.
 
@@ -335,10 +366,11 @@ from pinn_pipe.utils import (
 ### 3.9 Test Suite (`tests/`)
 
 The test suite covers unit verification across all subsystems:
-- **[`tests/test_models.py`](../tests/test_models.py)**: Model forward pass shapes, repr strings, and invalid configuration guards.
+- **[`tests/test_models.py`](../tests/test_models.py)**: Model forward pass shapes, repr strings, activation function coverage (tanh, relu, sigmoid, silu, gelu, sin, mish), and `HardBCMLP` exact boundary satisfaction tests.
 - **[`tests/test_physics.py`](../tests/test_physics.py)**: Analytical solution boundary values ($u(0) = u_{\max}$, $u(R) = 0$), shape assertions, and PDE/BC residual tensor outputs.
 - **[`tests/test_sampler.py`](../tests/test_sampler.py)**: Interior and boundary sampling tensor shapes, value ranges, and `requires_grad=True` verification.
 - **[`tests/test_losses.py`](../tests/test_losses.py)**: Individual loss non-negativity, scalar output types, and composite dictionary structure.
+- **[`tests/test_schedulers.py`](../tests/test_schedulers.py)**: LR scheduler instantiation, parameter decay steps, and hybrid optimizer transitions in `Trainer`.
 
 ---
 
@@ -375,13 +407,20 @@ The table below summarizes the latest benchmark evaluations following the resolu
 | `exp_013_sigmoid_activation` | `exp_013_sigmoid_activation.yaml` | (6, 32, sigmoid) | 64,000 | Adam | (1.0, 1.0, 1.0) | 0.0213 | 0.0243 | 0.0359 (3.59%) |
 | `exp_014_more_collocation_points` | `exp_014_more_collocation_points.yaml` | (6, 32, tanh) | 64,000 | Adam | (1.0, 1.0, 1.0) | 0.0018 | 0.0023 | 0.0025 (0.25%) |
 | `exp_015_fewer_collocation_points` | `exp_015_fewer_collocation_points.yaml` | (6, 32, tanh) | 64,000 | Adam | (1.0, 1.0, 1.0) | 0.0067 | 0.0075 | 0.0114 (1.14%) |
-| `exp_016_higher_bc_weights` | `exp_016_higher_bc_weights.yaml` | (6, 32, tanh) | 64,000 | Adam | (1.0, 10.0, 10.0) | 0.0016 | 0.0022 | 0.0031 (0.31%) |
-| `exp_017_lower_physics_weight` | `exp_017_lower_physics_weight.yaml` | (6, 32, tanh) | 64,000 | Adam | (0.1, 1.0, 1.0) | 0.0021 | 0.0027 | 0.0039 (0.39%) |
+| `exp_016_higher_bc_weights` | `exp_016_higher_bc_weights.yaml` | (6, 32, tanh) | 64,000 | Adam | (1.0, 10.0, 10.0) | 0.0015 | 0.0021 | 0.0027 (0.27%) |
+| `exp_017_lower_physics_weight` | `exp_017_lower_physics_weight.yaml` | (6, 32, tanh) | 64,000 | Adam | (0.1, 1.0, 1.0) | 0.0096 | 0.0168 | 0.0123 (1.23%) |
+| `exp_018_lower_lr` | `exp_018_lower_lr.yaml` | (6, 32, tanh) | 64,000 | Adam (lr=1e-4) | (1.0, 1.0, 1.0) | 0.0053 | 0.0071 | 0.0077 (0.77%) |
+| `exp_019_higher_lr` | `exp_019_higher_lr.yaml` | (6, 32, tanh) | 64,000 | Adam (lr=1e-2) | (1.0, 1.0, 1.0) | 0.9131 | 1.2502 | 1.0003 (100.0%) |
+| `exp_020_higher_physics_weight` | `exp_020_higher_physics_weight.yaml` | (6, 32, tanh) | 64,000 | Adam | (10.0, 1.0, 1.0) | 0.0063 | 0.0071 | 0.0120 (1.20%) |
+| `exp_021_longer_training` | `exp_021_longer_training.yaml` | (6, 32, tanh) | 128,000 | Adam | (1.0, 1.0, 1.0) | 0.0019 | 0.0025 | 0.0039 (0.39%) |
+| `exp_022_physics_weight_5` | `exp_022_physics_weight_5.yaml` | (6, 32, tanh) | 64,000 | Adam | (5.0, 1.0, 1.0) | 0.0062 | 0.0071 | 0.0130 (1.30%) |
+| `exp_023_physics_weight_50` | `exp_023_physics_weight_50.yaml` | (6, 32, tanh) | 64,000 | Adam | (50.0, 1.0, 1.0) | 0.0186 | 0.0194 | 0.0169 (1.69%) |
+| `exp_024_physics_weight_100` | `exp_024_physics_weight_100.yaml` | (6, 32, tanh) | 64,000 | Adam | (100.0, 1.0, 1.0) | 0.0544 | 0.0551 | 0.0739 (7.39%) |
 
 #### Key Empirical Insights
 
 1. **Epoch Scaling & Error Halving**:
-   Successive doubling of training iterations ($4\text{k} \to 8\text{k} \to 16\text{k} \to 32\text{k} \to 64\text{k}$) exhibits consistent, power-law-like error halving, reaching 0.52% relative $L_2$ error on baseline architecture.
+   Successive doubling of training iterations ($4\text{k} \to 8\text{k} \to 16\text{k} \to 32\text{k} \to 64\text{k}$) exhibits consistent error halving down to 0.52% relative $L_2$ error on baseline architecture, with returns plateauing around 128k epochs (0.39%).
 2. **Network Depth vs. Width**:
    Increasing layer width (64, 128) degraded performance on this 1D axisymmetric problem due to over-parameterization. Conversely, deepening to depth=6 yielded the overall best performing model (`exp_009`, 0.24% relative error), while depth=9 suffered from optimization degradation.
 3. **Optimizer Selection**:
@@ -390,14 +429,16 @@ The table below summarizes the latest benchmark evaluations following the resolu
    Tanh demonstrated superior performance (0.0015 error) over Sigmoid (0.0213 error), owing to non-vanishing second-order derivatives in the Navier-Stokes residual.
 5. **Collocation Point Density**:
    1,000 interior points per epoch represents an optimal efficiency sweet spot; increasing to 5,000 gave comparable error (0.0018), while dropping to 200 severely impaired accuracy (0.0067).
-6. **Loss Weighting**:
-   Equal loss weighting ($1.0, 1.0, 1.0$) was empirically confirmed as robust; higher BC weights slightly matched baseline (0.0016), while downweighting physics residual slightly degraded accuracy (0.0021).
-7. **Physical Formula & Singularity Corrections**:
-   Initial prototype runs (2026-09-12) had high error ($\approx 100\%$) due to two issues documented in [`CHANGELOG.md`](../CHANGELOG.md): an incorrect coefficient in $\partial p/\partial z$ (2 instead of 4) and numerical instability at $r \approx 0$ in the $1/r$ term. Addressing these reduced the baseline error by over $20\times$ immediately.
+6. **Loss Weighting & Physics Residual Sweep**:
+   Equal loss weighting ($1.0, 1.0, 1.0$) was empirically confirmed as optimal. Progressively increasing physics residual weight from 5 to 100 caused systematic accuracy degradation (error increased from 0.0062 to 0.0544) due to stiff gradient competition against boundary condition loss terms.
+7. **Learning Rate Sensitivity**:
+   $\text{lr} = 10^{-3}$ is the optimal operating regime for Adam on this architecture. Lowering to $10^{-4}$ slowed convergence ($0.0053$ error), whereas increasing to $10^{-2}$ triggered catastrophic gradient explosion ($0.913$ error).
+8. **Phase 9 Advanced Frontiers**:
+   Experiments `exp_025` through `exp_028` evaluate modern techniques designed to surpass the `exp_009` baseline: cosine annealing learning rate schedules, two-stage hybrid Adam $\to$ L-BFGS optimization, non-saturating SiLU activations, and exact hard boundary condition enforcement via `HardBCMLP`.
 
 Each run folder contains:
 - `config.yaml`: Merged configuration snapshot.
-- `history.csv`: Per-epoch training losses.
-- `metrics.json`: Quantitative error metrics against exact Hagen-Poiseuille solution.
+- `history.csv`: Per-epoch training losses and learning rates.
+- `metrics.json`: Quantitative error metrics against exact Hagen-Poiseuille solution and training duration.
 - `model.pt`: Serialized PyTorch model weights.
 - `plots/`: `velocity_profile.png`, `loss_curve.png`, and `error_plot.png`.

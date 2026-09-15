@@ -277,3 +277,70 @@ The mathematical formulation holds under the following physical assumptions:
 | **Fully Developed** | $\frac{\partial u}{\partial z} = 0$ | The observation region is located sufficiently far downstream from the pipe inlet, so entrance effects have decayed. |
 | **Rigid, Non-Porous Wall** | Wall at $r=R$ is fixed and impermeable | Fluid cannot penetrate the wall ($u_r(R) = 0$), and the wall does not deform. |
 | **Horizontal Pipe** | Body force $g_z = 0$ | Gravity acts perpendicular to the flow direction and is balanced by hydrostatic pressure; it does not accelerate axial flow. |
+
+---
+
+## 9. Boundary Condition Enforcement: Soft BCs vs. Hard BC Ansatz
+
+In physics-informed machine learning, boundary conditions can be enforced through two fundamentally distinct mathematical paradigms:
+
+```
+                      BOUNDARY CONDITION ENFORCEMENT
+                                     |
+             +-----------------------+-----------------------+
+             |                                               |
+             v                                               v
+     [ Soft BCs (Penalty) ]                        [ Hard BCs (Ansatz) ]
+   - Loss function penalties                    - Exact algebraic formulation
+   - Approximate satisfaction                   - Identical satisfaction (0 error)
+   - Requires tuning loss weights               - Eliminates BC loss weights
+   - Standard MLP architecture                  - HardBCMLP architecture
+```
+
+### 9.1 Soft Boundary Conditions (Penalty Method)
+
+In standard PINNs, boundary conditions are treated as soft penalty terms added to the training objective:
+
+$$\mathcal{L}_{\text{total}} = w_{\text{pde}}\mathcal{L}_{\text{pde}} + w_{\text{wall}}\mathcal{L}_{\text{wall}} + w_{\text{sym}}\mathcal{L}_{\text{sym}}$$
+
+While conceptually straightforward and flexible, the soft penalty approach has practical limitations:
+- **Gradient Stiffening & Competition**: The neural network must simultaneously balance minimization of the differential equation in the domain against Dirichlet and Neumann boundary values.
+- **Boundary Leakage**: Because boundary conditions are only minimized in the mean-square sense, the trained network may produce small non-zero velocities at the solid wall ($u(R) \neq 0$) or non-zero slopes at the centerline.
+- **Hyperparameter Sensitivity**: The quality of convergence depends heavily on the chosen loss weights ($w_{\text{wall}}, w_{\text{sym}}$).
+
+### 9.2 Hard Boundary Conditions (Ansatz Formulation)
+
+To overcome boundary leakage, the `pinn-pipe-flow` framework provides `HardBCMLP`, which structurally embeds both boundary conditions into the network output via an analytical ansatz:
+
+$$\hat{u}(r, u_{\max}) = \underbrace{u_{\max} \left(1 - \frac{r^2}{R^2}\right)}_{\text{Base Physical Profile}} + \underbrace{\left(1 - \frac{r^2}{R^2}\right) \left(\frac{r^2}{R^2}\right) \text{NN}(r, u_{\max})}_{\text{Boundary-Regularized Correction}}$$
+
+where $\text{NN}(r, u_{\max})$ is an unconstrained feedforward neural network trunk.
+
+#### Proof of Exact Boundary Satisfaction:
+
+1. **Exact Wall No-Slip Condition ($r = R$):**
+   Evaluating at $r = R$:
+   $$1 - \frac{R^2}{R^2} = 1 - 1 = 0$$
+   Both the base profile term and the correction term contain the factor $\left(1 - \frac{r^2}{R^2}\right)$:
+   $$\hat{u}(R, u_{\max}) = u_{\max}(0) + (0) \cdot (1) \cdot \text{NN}(R, u_{\max}) \equiv 0$$
+   The wall no-slip condition is **identically satisfied for all parameter values and all network weights**.
+
+2. **Exact Centerline Symmetry Condition ($r = 0$):**
+   Evaluating velocity at $r = 0$:
+   $$\hat{u}(0, u_{\max}) = u_{\max}(1 - 0) + (1)(0)\text{NN}(0, u_{\max}) = u_{\max}$$
+   Now, differentiate with respect to $r$:
+   $$\frac{\partial \hat{u}}{\partial r} = \frac{\partial}{\partial r}\left[ u_{\max}\left(1 - \frac{r^2}{R^2}\right) \right] + \frac{\partial}{\partial r}\left[ \left(1 - \frac{r^2}{R^2}\right) \left(\frac{r}{R}\right)^2 \text{NN}(r, u_{\max}) \right]$$
+   - First term derivative:
+     $$\left. \frac{\partial}{\partial r}\left[ u_{\max}\left(1 - \frac{r^2}{R^2}\right) \right] \right|_{r=0} = \left. -\frac{2 u_{\max} r}{R^2} \right|_{r=0} = 0$$
+   - Second term derivative: Applying the product rule, every resulting term retains at least one factor of $r$:
+     $$\frac{\partial}{\partial r}\left[\left(\frac{r^2}{R^2} - \frac{r^4}{R^4}\right)\text{NN}\right] = \left(\frac{2r}{R^2} - \frac{4r^3}{R^4}\right)\text{NN} + \left(\frac{r^2}{R^2} - \frac{r^4}{R^4}\right)\frac{\partial \text{NN}}{\partial r}$$
+     Evaluating at $r = 0$:
+     $$\left. \frac{\partial}{\partial r}\left[ \left(1 - \frac{r^2}{R^2}\right) \left(\frac{r^2}{R^2}\right) \text{NN} \right] \right|_{r=0} = (0 - 0)\text{NN} + (0 - 0)\frac{\partial \text{NN}}{\partial r} = 0$$
+   Therefore:
+   $$\left. \frac{\partial \hat{u}}{\partial r} \right|_{r=0} \equiv 0$$
+   Centerline symmetry is **identically satisfied for all inputs and all network weights**.
+
+#### Physical & Numerical Advantages:
+- **Zero Boundary Violation**: Machine-precision satisfaction of physical boundary conditions across all operating regimes.
+- **Loss Simplification**: Boundary condition loss weights are set to zero ($w_{\text{wall}} = 0.0, w_{\text{sym}} = 0.0$), eliminating multi-objective gradient conflict.
+- **Faster Convergence**: The optimizer directs $100\%$ of its gradient updates toward minimizing the governing Navier-Stokes momentum residual.

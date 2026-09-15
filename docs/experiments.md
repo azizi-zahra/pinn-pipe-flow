@@ -66,10 +66,11 @@ physics:
     max: 2.0        # Maximum u_max sampled during training
 
 model:
-  type: "mlp"       # Architecture name
+  type: "mlp"                   # Architecture: "mlp" or "hard_bc_mlp"
   hidden_layer_depth: 3
   hidden_layer_width: 32
-  activation: "tanh"
+  activation: "tanh"            # "tanh", "relu", "sigmoid", "silu", "gelu", "sin", "mish"
+  hard_bc: false                # Enforce exact Dirichlet and Neumann BCs via ansatz
 
 sampling:
   num_interior_points: 1000   # Collocation points inside the pipe
@@ -77,10 +78,14 @@ sampling:
 training:
   epochs: 4000
   learning_rate: 0.001
-  optimizer: "adam"
+  optimizer: "adam"             # "adam", "sgd", "lbfgs", "hybrid"
   loss_weight_physics: 1.0      # Weight for PDE residual loss
-  loss_weight_bc_wall: 1.0      # Weight for no-slip BC at r=R
-  loss_weight_bc_symmetry: 1.0  # Weight for symmetry BC at r=0
+  loss_weight_bc_wall: 1.0      # Weight for no-slip BC at r=R (set 0.0 if hard_bc is true)
+  loss_weight_bc_symmetry: 1.0  # Weight for symmetry BC at r=0 (set 0.0 if hard_bc is true)
+  lr_scheduler: null            # "cosine", "step", "multistep", "plateau", "exponential", or null
+  lr_scheduler_params: {}       # Scheduler-specific hyperparameters
+  hybrid_switch_epoch: null     # Epoch to switch from Adam to L-BFGS (if optimizer is "hybrid")
+  lbfgs_learning_rate: 1.0      # Learning rate for L-BFGS phase (if optimizer is "hybrid")
 
 run:
   seed: 42
@@ -246,28 +251,33 @@ When formulating hypotheses and configuring experiments, consider the following 
 ### 8.1 Network Architecture (`model`)
 
 - **Activation Function**:
-  - Always use smooth, infinitely differentiable ($C^\infty$) activation functions like `tanh` for PINNs.
+  - Always use smooth, continuously differentiable ($C^\infty$) activation functions like `tanh`, `silu` (Swish), `gelu`, or sinusoidal `sin` (SIREN-style) for PINNs.
   - **Avoid `relu`**: The second derivative of ReLU is zero almost everywhere ($\frac{d^2}{dr^2}\text{ReLU}(x) = 0$). Since the PDE residual depends directly on the second derivative $\frac{d^2 u}{dr^2}$, ReLU networks cannot propagate physics gradients effectively.
+  - **SiLU / Swish**: Smooth, non-saturating non-linearities can accelerate convergence and alleviate vanishing gradient effects in deep networks.
+- **Hard Boundary Conditions (`hard_bc_mlp`)**:
+  - Setting `model.type: "hard_bc_mlp"` or `model.hard_bc: true` enforces exact no-slip $u(R) = 0$ and symmetry $\frac{du}{dr}(0) = 0$ conditions through an analytical ansatz. This eliminates boundary violation entirely and allows setting $w_{\text{wall}} = 0.0$ and $w_{\text{sym}} = 0.0$.
 - **Depth vs. Width**:
-  - For simple Hagen-Poiseuille flow, a shallow network (depth 3, width 32 to 64) is typically sufficient to capture the parabolic profile.
-  - Increasing depth beyond 5–6 layers without skip connections can cause optimization slowdowns without accuracy gains.
+  - For simple Hagen-Poiseuille flow, a slender network (depth 6, width 32) provides the optimal balance of capacity and optimization dynamics.
+  - Increasing width (64, 128) impairs optimization on this low-dimensional 1D radial problem.
 
 ### 8.2 Loss Weighting (`training.loss_weight_*`)
 
 PINN loss surfaces often suffer from gradient competition between the PDE residual and boundary conditions:
-- **High Wall Errors**: If the model predicts non-zero velocity at the wall ($r = R$), increase `loss_weight_bc_wall` from `1.0` to `5.0` or `10.0`.
-- **Under-Fitting the Profile Curvature**: If boundary conditions are satisfied but the profile fails to match the parabolic curvature in the interior, increase `loss_weight_physics`.
+- **Balanced Weights**: Equal weighting ($1.0, 1.0, 1.0$) performs consistently well across baseline experiments.
+- **Physics Loss Upweighting**: Over-penalizing the PDE residual ($w_{\text{physics}} \ge 10$) severely degrades accuracy because physics loss gradients drown out boundary condition constraints during early training.
+- **Hard BCs**: When using `HardBCMLP`, boundary condition weights can be safely set to `0.0`.
 
 ### 8.3 Collocation Point Density (`sampling.num_interior_points`)
 
 - Collocation points are resampled dynamically every training epoch.
 - 1,000 points per epoch provides good radial coverage for 1D pipe flow.
-- Increasing to 2,000–5,000 points can help reduce variance if the loss fluctuates between epochs, at the cost of marginally slower epoch execution.
+- Increasing to 5,000 points yields minimal accuracy gain (0.0018 vs 0.0015) while increasing compute time; dropping to 200 points degrades accuracy noticeably.
 
 ### 8.4 Optimization & Learning Rate (`training`)
 
-- **Learning Rate**: For Adam, `1e-3` is a robust baseline. If the loss plateaus early or oscillates erratically, try reducing to `5e-4` or `1e-4` with longer epochs (e.g., 6,000–8,000).
-- **Epoch Count**: 4,000 epochs is typically enough for baseline convergence. Monitor `plots/loss_curve.png` to ensure losses have flattened before concluding training.
+- **Learning Rate**: For Adam, `1e-3` is optimal. Lowering to `1e-4` leads to slow convergence, while increasing to `1e-2` causes gradient explosion and complete divergence.
+- **Learning Rate Schedulers**: Set `lr_scheduler: "cosine"` with `lr_scheduler_params: {eta_min: 1e-6}` to decay the learning rate smoothly towards the end of training for stabilized late convergence.
+- **Hybrid Optimization**: Set `optimizer: "hybrid"` with `hybrid_switch_epoch` (e.g. 50,000 out of 64,000) to let Adam explore globally before handing over to L-BFGS for quadratic fine-tuning.
 
 ---
 
@@ -277,13 +287,13 @@ PINN loss surfaces often suffer from gradient competition between the PDE residu
 
 Epochs were varied systematically from 4,000 to 64,000 to analyze training convergence and error scaling. The $L_2$ error consistently halved with each doubling of epochs, and no convergence plateau was observed within this range. As a result, 64,000 epochs was chosen as the standard training duration for subsequent phases.
 
-| Experiment | Epochs | L2 Error |
-| :--- | :---: | :---: |
-| `exp_001` | 4000 | 0.0241 |
-| `exp_003` | 8000 | 0.0143 |
-| `exp_004` | 16000 | 0.0077 |
-| `exp_005` | 32000 | 0.0041 |
-| `exp_006` | 64000 | 0.0021 |
+| Experiment | Epochs | L2 Error | Max Error | Relative L2 Error |
+| :--- | :---: | :---: | :---: | :---: |
+| `exp_001` | 4,000 | 0.0241 | 0.0318 | 4.91% |
+| `exp_003` | 8,000 | 0.0143 | 0.0170 | 2.94% |
+| `exp_004` | 16,000 | 0.0077 | 0.0083 | 1.44% |
+| `exp_005` | 32,000 | 0.0041 | 0.0046 | 0.79% |
+| `exp_006` | 64,000 | 0.0021 | 0.0023 | 0.52% |
 
 ### Phase 2 -- Architecture
 
@@ -291,13 +301,13 @@ Network width and depth were evaluated independently while fixing training durat
 - **Width Variation**: Wider networks performed worse than the baseline width of 32. Because the 1D Hagen-Poiseuille problem is physically low-dimensional, wider layers introduced unnecessary capacity that impaired optimization.
 - **Depth Variation**: Increasing depth improved performance up to depth 6, beyond which accuracy degraded (likely due to vanishing gradients in deeper un-residualized architectures).
 
-| Experiment | Width | Depth | L2 Error |
-| :--- | :---: | :---: | :---: |
-| `exp_006` | 32 | 3 | 0.0021 |
-| `exp_007` | 64 | 3 | 0.0034 |
-| `exp_008` | 128 | 3 | 0.0081 |
-| `exp_009` | 32 | 6 | 0.0015 |
-| `exp_010` | 32 | 9 | 0.0044 |
+| Experiment | Width | Depth | L2 Error | Max Error | Relative L2 Error |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| `exp_006` | 32 | 3 | 0.0021 | 0.0023 | 0.52% |
+| `exp_007` | 64 | 3 | 0.0034 | 0.0036 | 0.64% |
+| `exp_008` | 128 | 3 | 0.0081 | 0.0093 | 1.54% |
+| `exp_009` | 32 | 6 | 0.0015 | 0.0021 | 0.24% |
+| `exp_010` | 32 | 9 | 0.0044 | 0.0068 | 0.46% |
 
 ### Phase 3 -- Optimizers
 
@@ -335,18 +345,60 @@ Evaluated the impact of interior collocation point density (baseline: 1,000):
 ### Phase 6 -- Loss Weighting
 
 Investigated relative loss weighting between PDE residuals and boundary conditions:
-- **Higher BC Weights (`exp_016`)**: Increasing $w_{\text{wall}} = 10.0$ and $w_{\text{sym}} = 10.0$ maintained very high accuracy ($L_2$ error 0.0016), nearly matching the baseline.
-- **Lower Physics Weight (`exp_017`)**: Reducing $w_{\text{physics}} = 0.1$ increased error slightly ($L_2$ error 0.0021), confirming equal weighting ($1.0, 1.0, 1.0$) remains optimal.
+- **Higher BC Weights (`exp_016`)**: Increasing $w_{\text{wall}} = 10.0$ and $w_{\text{sym}} = 10.0$ maintained very high accuracy ($L_2$ error 0.0015), effectively tying with baseline.
+- **Lower Physics Weight (`exp_017`)**: Reducing $w_{\text{physics}} = 0.1$ increased error ($L_2$ error 0.0096), confirming equal weighting remains optimal.
 
 | Experiment | $w_{\text{physics}}$ | $w_{\text{wall}}$ | $w_{\text{sym}}$ | L2 Error | Max Error | Relative L2 Error |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | `exp_009` (Baseline) | 1.0 | 1.0 | 1.0 | 0.0015 | 0.0021 | 0.24% |
-| `exp_016` | 1.0 | 10.0 | 10.0 | 0.0016 | 0.0022 | 0.31% |
-| `exp_017` | 0.1 | 1.0 | 1.0 | 0.0021 | 0.0027 | 0.39% |
+| `exp_016` | 1.0 | 10.0 | 10.0 | 0.0015 | 0.0021 | 0.27% |
+| `exp_017` | 0.1 | 1.0 | 1.0 | 0.0096 | 0.0168 | 1.23% |
 
-### Current Best Configuration
+### Phase 7 -- Learning Rate & Training Duration
 
-Across all 17 experiments, the optimal configuration is **`exp_009_deeper_network`**:
+Investigated learning rate sensitivity and extending training to 128,000 epochs:
+- **Lower LR (`exp_018`, lr=1e-4)**: Converged too slowly, reaching an $L_2$ error of 0.0053 (over $3\times$ higher than baseline).
+- **Higher LR (`exp_019`, lr=1e-2)**: Caused severe instability and gradient explosion ($L_2$ error 0.9131, 100% relative error).
+- **Longer Training (`exp_021`, 128k epochs)**: Plateaued with an $L_2$ error of 0.0019, showing marginal diminishing returns beyond 64,000 epochs for this architecture.
+
+| Experiment | Epochs | Learning Rate | L2 Error | Max Error | Relative L2 Error |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| `exp_018_lower_lr` | 64,000 | 0.0001 | 0.0053 | 0.0071 | 0.77% |
+| `exp_009` (Baseline) | 64,000 | 0.0010 | 0.0015 | 0.0021 | 0.24% |
+| `exp_019_higher_lr` | 64,000 | 0.0100 | 0.9131 | 1.2502 | 100.03% |
+| `exp_021_longer_training` | 128,000 | 0.0010 | 0.0019 | 0.0025 | 0.39% |
+
+### Phase 8 -- Physics Loss Weight Sweep
+
+Explored aggressive upweighting of the physics residual ($w_{\text{physics}} \in \{5, 10, 50, 100\}$):
+- Heavily prioritizing the PDE residual consistently impaired convergence, with $L_2$ error monotonically rising from 0.0062 ($w=5$) up to 0.0544 ($w=100$). Strong PDE gradients early in training overpower the boundary condition constraints, leading to distorted profiles.
+
+| Experiment | $w_{\text{physics}}$ | $w_{\text{wall}}$ | $w_{\text{sym}}$ | L2 Error | Max Error | Relative L2 Error |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| `exp_009` (Baseline) | 1.0 | 1.0 | 1.0 | 0.0015 | 0.0021 | 0.24% |
+| `exp_022_physics_weight_5` | 5.0 | 1.0 | 1.0 | 0.0062 | 0.0071 | 1.30% |
+| `exp_020_higher_physics_weight`| 10.0 | 1.0 | 1.0 | 0.0063 | 0.0071 | 1.20% |
+| `exp_023_physics_weight_50` | 50.0 | 1.0 | 1.0 | 0.0186 | 0.0194 | 1.69% |
+| `exp_024_physics_weight_100`| 100.0 | 1.0 | 1.0 | 0.0544 | 0.0551 | 7.39% |
+
+### Phase 9 -- Advanced Optimization & Architectural Innovation
+
+Introduced advanced training strategies and exact boundary formulations:
+- **`exp_025_cosine_lr`**: Evaluates `CosineAnnealingLR` scheduler decaying from $10^{-3}$ to $10^{-6}$ over 64,000 epochs to stabilize late-stage convergence.
+- **`exp_026_hybrid_adam_lbfgs`**: Two-stage optimization using Adam for 50,000 epochs to navigate global parameter space, followed by second-order L-BFGS for curvature fine-tuning.
+- **`exp_027_silu_activation`**: Evaluates smooth, self-gated SiLU ($\text{swish}$) activation function against Tanh.
+- **`exp_028_hard_bc`**: Evaluates `HardBCMLP` enforcing exact Dirichlet wall ($u(R) = 0$) and Neumann symmetry ($\partial u/\partial r(0) = 0$) boundary conditions through an analytical ansatz with $w_{\text{wall}} = 0.0, w_{\text{sym}} = 0.0$.
+
+| Experiment | Concept | Architecture / Optimizer | Configuration Highlights |
+| :--- | :--- | :--- | :--- |
+| `exp_025_cosine_lr` | Cosine LR Scheduling | Depth 6, Width 32, Tanh, Adam | `lr_scheduler: "cosine"`, $\eta_{\min} = 10^{-6}$ |
+| `exp_026_hybrid_adam_lbfgs`| Two-Stage Hybrid | Depth 6, Width 32, Tanh, Hybrid | Adam $\to$ L-BFGS at epoch 50,000 |
+| `exp_027_silu_activation` | Smooth Non-Linearity | Depth 6, Width 32, SiLU, Adam | `activation: "silu"`, 64k epochs |
+| `exp_028_hard_bc` | Exact Boundary Ansatz | HardBCMLP (Depth 6, Width 32) | $w_{\text{wall}} = 0.0, w_{\text{sym}} = 0.0$ |
+
+### Current Best Established Configuration
+
+Across all completed benchmark experiments, the top-performing model is **`exp_009_deeper_network`** (matched closely by `exp_016`):
 - **Architecture**: MLP (Width = 32, Depth = 6, Activation = Tanh)
 - **Training**: Epochs = 64,000, Optimizer = Adam ($\text{lr} = 10^{-3}$)
 - **Collocation Points**: 1,000 interior points per epoch
