@@ -12,8 +12,7 @@ overrides:
     hidden_layer_depth: 6
   training:
     epochs: 64000
-    loss_weights:
-      physics: 1.0     
-      bc_wall: 10.0      
-      bc_symmetry: 10.0
+    loss_weight_physics: 1.0
+    loss_weight_bc_wall: 10.0
+    loss_weight_bc_symmetry: 10.0
   

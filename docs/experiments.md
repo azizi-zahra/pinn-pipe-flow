@@ -78,10 +78,9 @@ training:
   epochs: 4000
   learning_rate: 0.001
   optimizer: "adam"
-  loss_weights:
-    physics: 1.0      # Weight for PDE residual loss
-    bc_wall: 1.0      # Weight for no-slip BC at r=R
-    bc_symmetry: 1.0  # Weight for symmetry BC at r=0
+  loss_weight_physics: 1.0      # Weight for PDE residual loss
+  loss_weight_bc_wall: 1.0      # Weight for no-slip BC at r=R
+  loss_weight_bc_symmetry: 1.0  # Weight for symmetry BC at r=0
 
 run:
   seed: 42
@@ -134,10 +133,9 @@ overrides:
   training:
     epochs: 5000
     learning_rate: 0.0005
-    loss_weights:
-      physics: 1.0
-      bc_wall: 10.0
-      bc_symmetry: 5.0
+    loss_weight_physics: 1.0
+    loss_weight_bc_wall: 10.0
+    loss_weight_bc_symmetry: 5.0
 ```
 
 ---
@@ -254,11 +252,11 @@ When formulating hypotheses and configuring experiments, consider the following 
   - For simple Hagen-Poiseuille flow, a shallow network (depth 3, width 32 to 64) is typically sufficient to capture the parabolic profile.
   - Increasing depth beyond 5–6 layers without skip connections can cause optimization slowdowns without accuracy gains.
 
-### 8.2 Loss Weighting (`training.loss_weights`)
+### 8.2 Loss Weighting (`training.loss_weight_*`)
 
 PINN loss surfaces often suffer from gradient competition between the PDE residual and boundary conditions:
-- **High Wall Errors**: If the model predicts non-zero velocity at the wall ($r = R$), increase `loss_weights.bc_wall` from `1.0` to `5.0` or `10.0`.
-- **Under-Fitting the Profile Curvature**: If boundary conditions are satisfied but the profile fails to match the parabolic curvature in the interior, increase `loss_weights.physics`.
+- **High Wall Errors**: If the model predicts non-zero velocity at the wall ($r = R$), increase `loss_weight_bc_wall` from `1.0` to `5.0` or `10.0`.
+- **Under-Fitting the Profile Curvature**: If boundary conditions are satisfied but the profile fails to match the parabolic curvature in the interior, increase `loss_weight_physics`.
 
 ### 8.3 Collocation Point Density (`sampling.num_interior_points`)
 

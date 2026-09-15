@@ -159,11 +159,11 @@ The framework supports:
 
 - **[`configs/experiments/exp_016_higher_bc_weights.yaml`](../configs/experiments/exp_016_higher_bc_weights.yaml)**
   - Evaluates higher boundary condition loss weights ($w_{\text{wall}}=10.0, w_{\text{sym}}=10.0$).
-  - Overrides: `training.loss_weights.bc_wall: 10.0`, `training.loss_weights.bc_symmetry: 10.0`, `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
+  - Overrides: `training.loss_weight_bc_wall: 10.0`, `training.loss_weight_bc_symmetry: 10.0`, `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
 
 - **[`configs/experiments/exp_017_lower_physics_weight.yaml`](../configs/experiments/exp_017_lower_physics_weight.yaml)**
   - Evaluates reduced physics loss weight ($w_{\text{physics}}=0.1$).
-  - Overrides: `training.loss_weights.physics: 0.1`, `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
+  - Overrides: `training.loss_weight_physics: 0.1`, `model.hidden_layer_depth: 6`, `training.epochs: 64000`.
 
 ---
 

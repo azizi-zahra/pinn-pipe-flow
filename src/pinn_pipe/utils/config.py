@@ -112,9 +112,9 @@ def load_config(base_path: str, experiment_path: str) -> Config:
             epochs=base_data["training"]["epochs"],
             learning_rate=base_data["training"]["learning_rate"],
             optimizer=base_data["training"]["optimizer"],
-            loss_weight_physics=base_data["training"]["loss_weights"]["physics"],
-            loss_weight_bc_wall=base_data["training"]["loss_weights"]["bc_wall"],
-            loss_weight_bc_symmetry=base_data["training"]["loss_weights"]["bc_symmetry"],
+            loss_weight_physics=base_data["training"]["loss_weight_physics"],
+            loss_weight_bc_wall=base_data["training"]["loss_weight_bc_wall"],
+            loss_weight_bc_symmetry=base_data["training"]["loss_weight_bc_symmetry"],
         ),
         run=RunConfig(
             seed=base_data["run"]["seed"],

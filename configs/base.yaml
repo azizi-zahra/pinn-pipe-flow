@@ -23,10 +23,9 @@ training:
   epochs: 4000
   learning_rate: 0.001
   optimizer: "adam"
-  loss_weights:
-    physics: 1.0      # weight for PDE residual loss
-    bc_wall: 1.0      # weight for no-slip BC at r=R
-    bc_symmetry: 1.0  # weight for symmetry BC at r=0
+  loss_weight_physics: 1.0      # weight for PDE residual loss
+  loss_weight_bc_wall: 1.0      # weight for no-slip BC at r=R
+  loss_weight_bc_symmetry: 1.0  # weight for symmetry BC at r=0
 
 run:
   seed: 42
