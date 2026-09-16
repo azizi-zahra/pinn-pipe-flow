@@ -89,7 +89,7 @@ class Trainer:
 
         At each epoch:
         - Handles hybrid optimizer switch from Adam to L-BFGS if configured
-        - Samples fresh interior and BC collocation points
+        - Samples fresh interior and BC collocation points (fixed during LBFGS phase)
         - Computes total loss and all individual loss terms
         - Backpropagates and steps the optimizer and LR scheduler
         - Logs loss values and learning rate to history
@@ -98,13 +98,21 @@ class Trainer:
         start_time = time.time()
         self.model.train()
 
+        # fixed points for LBFGS phase -- populated at switch epoch
+        r_fixed: Optional[torch.Tensor] = None
+        u_max_fixed: Optional[torch.Tensor] = None
+        r_wall_fixed: Optional[torch.Tensor] = None
+        r_sym_fixed: Optional[torch.Tensor] = None
+        u_max_bc_fixed: Optional[torch.Tensor] = None
+
         for epoch in range(1, self.config.training.epochs + 1):
+
             # Hybrid optimizer transition: switch from Adam to L-BFGS
             if self.is_hybrid and epoch == self.switch_epoch + 1:
                 lbfgs_lr = (
                     self.config.training.lbfgs_learning_rate
                     if self.config.training.lbfgs_learning_rate is not None
-                    else 1.0
+                    else 0.1
                 )
                 print(
                     f"\n>>> [Hybrid Optimizer] Switching from Adam to L-BFGS at epoch {epoch} "
@@ -116,29 +124,52 @@ class Trainer:
                     max_iter=20,
                     history_size=50,
                 )
-                self.scheduler = None  # L-BFGS relies on internal line search
+                self.scheduler = None
 
-            # sample fresh points every epoch
-            r, u_max = sample_interior(
-                n=self.config.sampling.num_interior_points,
-                R=self.config.physics.R,
-                u_max_min=self.config.physics.u_max_min,
-                u_max_max=self.config.physics.u_max_max,
-            )
+                # fix sampling points for entire LBFGS phase
+                r_fixed, u_max_fixed = sample_interior(
+                    n=self.config.sampling.num_interior_points,
+                    R=self.config.physics.R,
+                    u_max_min=self.config.physics.u_max_min,
+                    u_max_max=self.config.physics.u_max_max,
+                )
+                r_wall_fixed, r_sym_fixed, u_max_bc_fixed = sample_bc(
+                    n=self.config.sampling.num_interior_points,
+                    R=self.config.physics.R,
+                    u_max_min=self.config.physics.u_max_min,
+                    u_max_max=self.config.physics.u_max_max,
+                )
+                r_fixed = r_fixed.to(self.device)
+                u_max_fixed = u_max_fixed.to(self.device)
+                r_wall_fixed = r_wall_fixed.to(self.device)
+                r_sym_fixed = r_sym_fixed.to(self.device)
+                u_max_bc_fixed = u_max_bc_fixed.to(self.device)
 
-            r_wall, r_sym, u_max_bc = sample_bc(
-                n=self.config.sampling.num_interior_points,
-                R=self.config.physics.R,
-                u_max_min=self.config.physics.u_max_min,
-                u_max_max=self.config.physics.u_max_max,
-            )
-            
-            # move tensors to device
-            r = r.to(self.device)
-            u_max = u_max.to(self.device)
-            r_wall = r_wall.to(self.device)
-            r_sym = r_sym.to(self.device)
-            u_max_bc = u_max_bc.to(self.device)
+            # use fixed points during LBFGS phase, fresh points during Adam phase
+            if self.is_hybrid and epoch > self.switch_epoch:
+                r = r_fixed
+                u_max = u_max_fixed
+                r_wall = r_wall_fixed
+                r_sym = r_sym_fixed
+                u_max_bc = u_max_bc_fixed
+            else:
+                r, u_max = sample_interior(
+                    n=self.config.sampling.num_interior_points,
+                    R=self.config.physics.R,
+                    u_max_min=self.config.physics.u_max_min,
+                    u_max_max=self.config.physics.u_max_max,
+                )
+                r_wall, r_sym, u_max_bc = sample_bc(
+                    n=self.config.sampling.num_interior_points,
+                    R=self.config.physics.R,
+                    u_max_min=self.config.physics.u_max_min,
+                    u_max_max=self.config.physics.u_max_max,
+                )
+                r = r.to(self.device)
+                u_max = u_max.to(self.device)
+                r_wall = r_wall.to(self.device)
+                r_sym = r_sym.to(self.device)
+                u_max_bc = u_max_bc.to(self.device)
 
             if isinstance(self.optimizer, torch.optim.LBFGS):
                 def closure():
@@ -166,8 +197,7 @@ class Trainer:
                     physics_config=self.config.physics,
                     training_config=self.config.training,
                 )
-            else:    
-                # compute losses
+            else:
                 losses = total_loss(
                     model=self.model,
                     r=r,
@@ -178,12 +208,11 @@ class Trainer:
                     physics_config=self.config.physics,
                     training_config=self.config.training,
                 )
-                # backpropagation
                 self.optimizer.zero_grad()
                 losses["loss_total_tensor"].backward()
                 self.optimizer.step()
 
-            # Step learning rate scheduler if configured
+            # step learning rate scheduler if configured
             if self.scheduler is not None:
                 if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                     self.scheduler.step(losses["loss_total"])
@@ -212,7 +241,7 @@ class Trainer:
                     f"BC Sym: {losses['loss_bc_symmetry']:.4e} | "
                     f"LR: {current_lr:.2e}"
                 )
-                
+
         self.training_time = time.time() - start_time
         print(f"Training completed in {self.training_time:.2f} seconds")
 

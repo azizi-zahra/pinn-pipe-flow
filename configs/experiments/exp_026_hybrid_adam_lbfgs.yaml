@@ -14,4 +14,4 @@ overrides:
     epochs: 64000
     optimizer: "hybrid"
     hybrid_switch_epoch: 50000
-    lbfgs_learning_rate: 1.0
+    lbfgs_learning_rate: 0.1
