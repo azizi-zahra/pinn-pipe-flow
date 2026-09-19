@@ -14,7 +14,14 @@ from datetime import datetime
 import torch
 import yaml
 
-from pinn_pipe.utils.config import Config
+from pinn_pipe.utils.config import (
+    Config,
+    ModelConfig,
+    PhysicsConfig,
+    RunConfig,
+    SamplingConfig,
+    TrainingConfig,
+)
 
 
 def create_run_dir(experiment_name: str, results_dir: str = "results") -> str:
@@ -110,3 +117,88 @@ def load_model(model: torch.nn.Module, run_dir: str) -> torch.nn.Module:
     model_path = os.path.join(run_dir, "model.pt")
     model.load_state_dict(torch.load(model_path))
     return model
+
+
+def load_run_config(run_dir: str) -> Config:
+    """Loads a saved run configuration from config.yaml without merging.
+
+    Reads results/<run_dir>/config.yaml (or {run_dir}/config.yaml),
+    parses it with yaml.safe_load, and constructs the Config dataclass directly.
+
+    Args:
+        run_dir: Path to the run directory or run directory name.
+
+    Returns:
+        A fully populated Config object.
+
+    Raises:
+        FileNotFoundError: If config.yaml is not found.
+    """
+    if os.path.isfile(run_dir):
+        config_path = run_dir
+    elif os.path.isfile(os.path.join(run_dir, "config.yaml")):
+        config_path = os.path.join(run_dir, "config.yaml")
+    elif os.path.isfile(os.path.join("results", run_dir, "config.yaml")):
+        config_path = os.path.join("results", run_dir, "config.yaml")
+    else:
+        raise FileNotFoundError(f"Run config not found in: {run_dir}")
+
+    with open(config_path, "r") as f:
+        data = yaml.safe_load(f)
+
+    physics_data = data.get("physics", {})
+    u_max_min = physics_data.get("u_max_min")
+    u_max_max = physics_data.get("u_max_max")
+    if u_max_min is None and "u_max_range" in physics_data:
+        u_max_min = physics_data["u_max_range"]["min"]
+        u_max_max = physics_data["u_max_range"]["max"]
+
+    physics = PhysicsConfig(
+        R=float(physics_data["R"]),
+        mu=float(physics_data["mu"]),
+        u_max_min=float(u_max_min),
+        u_max_max=float(u_max_max),
+    )
+
+    model_data = data.get("model", {})
+    model = ModelConfig(
+        type=str(model_data["type"]),
+        hidden_layer_depth=int(model_data["hidden_layer_depth"]),
+        hidden_layer_width=int(model_data["hidden_layer_width"]),
+        activation=str(model_data["activation"]),
+        hard_bc=bool(model_data.get("hard_bc", False)),
+        pipe_radius=float(model_data.get("pipe_radius", physics.R)),
+    )
+
+    sampling_data = data.get("sampling", {})
+    sampling = SamplingConfig(
+        num_interior_points=int(sampling_data["num_interior_points"]),
+    )
+
+    training_data = data.get("training", {})
+    training = TrainingConfig(
+        epochs=int(training_data["epochs"]),
+        learning_rate=float(training_data["learning_rate"]),
+        optimizer=str(training_data["optimizer"]),
+        loss_weight_physics=float(training_data["loss_weight_physics"]),
+        loss_weight_bc_wall=float(training_data["loss_weight_bc_wall"]),
+        loss_weight_bc_symmetry=float(training_data["loss_weight_bc_symmetry"]),
+        lr_scheduler=training_data.get("lr_scheduler", None),
+        lr_scheduler_params=training_data.get("lr_scheduler_params", None),
+        hybrid_switch_epoch=training_data.get("hybrid_switch_epoch", None),
+        lbfgs_learning_rate=training_data.get("lbfgs_learning_rate", None),
+    )
+
+    run_data = data.get("run", {})
+    run = RunConfig(
+        seed=int(run_data["seed"]),
+        dtype=str(run_data["dtype"]),
+    )
+
+    return Config(
+        physics=physics,
+        model=model,
+        sampling=sampling,
+        training=training,
+        run=run,
+    )

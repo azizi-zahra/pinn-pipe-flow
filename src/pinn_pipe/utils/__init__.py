@@ -19,6 +19,7 @@ from pinn_pipe.utils.derivatives import grad, grad2
 from pinn_pipe.utils.io import (
     create_run_dir,
     load_model,
+    load_run_config,
     save_config,
     save_history,
     save_metrics,
@@ -39,6 +40,7 @@ __all__ = [
     "grad2",
     "load_config",
     "load_model",
+    "load_run_config",
     "save_config",
     "save_history",
     "save_metrics",
