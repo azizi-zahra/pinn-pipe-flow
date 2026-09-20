@@ -383,24 +383,45 @@ Explored aggressive upweighting of the physics residual ($w_{\text{physics}} \in
 
 ### Phase 9 -- Advanced Optimization & Architectural Innovation
 
-Introduced advanced training strategies and exact boundary formulations:
-- **`exp_025_cosine_lr`**: Evaluates `CosineAnnealingLR` scheduler decaying from $10^{-3}$ to $10^{-6}$ over 64,000 epochs to stabilize late-stage convergence.
-- **`exp_026_hybrid_adam_lbfgs`**: Two-stage optimization using Adam for 50,000 epochs to navigate global parameter space, followed by second-order L-BFGS for curvature fine-tuning.
-- **`exp_027_silu_activation`**: Evaluates smooth, self-gated SiLU ($\text{swish}$) activation function against Tanh.
-- **`exp_028_hard_bc`**: Evaluates `HardBCMLP` enforcing exact Dirichlet wall ($u(R) = 0$) and Neumann symmetry ($\partial u/\partial r(0) = 0$) boundary conditions through an analytical ansatz with $w_{\text{wall}} = 0.0, w_{\text{sym}} = 0.0$.
+Evaluated modern optimization and exact boundary formulation strategies at 64,000 epochs:
+- **`exp_025_cosine_lr`**: Cosine annealing learning rate schedule smoothly decaying lr from $10^{-3}$ to $10^{-6}$.
+- **`exp_026_hybrid_adam_lbfgs`**: Two-stage hybrid training (Adam for 50,000 epochs $\to$ L-BFGS for 14,000 epochs with fixed collocation points and lr=0.1).
+- **`exp_027_silu_activation`**: SiLU ($\text{swish}$) smooth self-gated non-linearity.
+- **`exp_028_hard_bc`**: `HardBCMLP` enforcing exact wall no-slip and centerline symmetry via an analytical ansatz ($w_{\text{wall}}=0.0, w_{\text{sym}}=0.0$).
 
-| Experiment | Concept | Architecture / Optimizer | Configuration Highlights |
-| :--- | :--- | :--- | :--- |
-| `exp_025_cosine_lr` | Cosine LR Scheduling | Depth 6, Width 32, Tanh, Adam | `lr_scheduler: "cosine"`, $\eta_{\min} = 10^{-6}$ |
-| `exp_026_hybrid_adam_lbfgs`| Two-Stage Hybrid | Depth 6, Width 32, Tanh, Hybrid | Adam $\to$ L-BFGS at epoch 50,000 |
-| `exp_027_silu_activation` | Smooth Non-Linearity | Depth 6, Width 32, SiLU, Adam | `activation: "silu"`, 64k epochs |
-| `exp_028_hard_bc` | Exact Boundary Ansatz | HardBCMLP (Depth 6, Width 32) | $w_{\text{wall}} = 0.0, w_{\text{sym}} = 0.0$ |
+| Experiment | Concept | L2 Error | Max Error | Relative L2 Error | Key Takeaway |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| `exp_025_cosine_lr` | Cosine Annealing | 0.00196 | 0.00249 | 0.22% | Smooths late training, prevents terminal oscillations |
+| `exp_026_hybrid_adam_lbfgs`| Hybrid Adam $\to$ L-BFGS | 0.00165 | 0.00185 | 0.19% | **Best Soft-BC Model**: L-BFGS fine-tunes quadratic basin |
+| `exp_027_silu_activation` | SiLU Activation | 0.00246 | 0.00263 | 0.46% | Good convergence, slightly higher error than Tanh |
+| `exp_028_hard_bc` | **Hard Boundary Ansatz** | **$5.34 \times 10^{-8}$** | **$9.69 \times 10^{-8}$** | **$7.34 \times 10^{-6}\%$** | **New SOTA**: 5 orders of magnitude error reduction |
 
-### Current Best Established Configuration
+---
 
-Across all completed benchmark experiments, the top-performing model is **`exp_009_deeper_network`** (matched closely by `exp_016`):
-- **Architecture**: MLP (Width = 32, Depth = 6, Activation = Tanh)
-- **Training**: Epochs = 64,000, Optimizer = Adam ($\text{lr} = 10^{-3}$)
-- **Collocation Points**: 1,000 interior points per epoch
-- **Loss Weights**: $w_{\text{physics}} = 1.0, w_{\text{wall}} = 1.0, w_{\text{sym}} = 1.0$
-- **Performance**: $L_2\text{ Error} = 0.00155$, $\text{Max Error} = 0.00212$, $\text{Relative } L_2\text{ Error} = 0.24\%$ (sub-0.25% error across all $u_{\max} \in [0.5, 2.0]$)
+### Current Best Established Configurations
+
+1. **Overall SOTA (Exact Boundary Ansatz)**: **`exp_028_hard_bc`**
+   - **Model**: `HardBCMLP` (Width = 32, Depth = 6, Activation = Tanh)
+   - **Training**: 64,000 epochs, Adam ($\text{lr} = 10^{-3}$), 1,000 interior points
+   - **Loss Weights**: $w_{\text{physics}} = 1.0, w_{\text{wall}} = 0.0, w_{\text{sym}} = 0.0$
+   - **Performance**: $L_2\text{ Error} = 5.34 \times 10^{-8}$, $\text{Max Error} = 9.69 \times 10^{-8}$, $\text{Relative Error} = 0.000007\%$
+
+2. **Best Soft-Penalty Baseline**: **`exp_026_hybrid_adam_lbfgs`**
+   - **Model**: `MLP` (Width = 32, Depth = 6, Activation = Tanh)
+   - **Training**: 50k epochs Adam + 14k epochs L-BFGS ($\text{lr} = 0.1$), fixed collocation points
+   - **Loss Weights**: $w_{\text{physics}} = 1.0, w_{\text{wall}} = 1.0, w_{\text{sym}} = 1.0$
+   - **Performance**: $L_2\text{ Error} = 0.00165$, $\text{Max Error} = 0.00185$, $\text{Relative Error} = 0.19\%$
+
+---
+
+## 10. Interactive Inspection with Streamlit Dashboard
+
+Launch the interactive dashboard to inspect any completed run without writing evaluation code:
+
+```bash
+streamlit run dashboard/app.py
+```
+
+- Select any completed run from the sidebar dropdown.
+- Adjust pipe radius $R$ and flow condition $u_{\max}$ via real-time sliders.
+- Inspect predicted vs. analytical velocity profiles, pointwise absolute error, and parameter sensitivity plots.
