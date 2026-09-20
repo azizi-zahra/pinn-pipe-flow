@@ -1,3 +1,4 @@
 streamlit
 plotly
 huggingface_hub
+torch
