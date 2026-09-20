@@ -29,6 +29,56 @@ st.set_page_config(
 
 
 # -----------------------------------------------------------------------------
+# Hugging Face Hub: download results/ once and cache the local path
+# -----------------------------------------------------------------------------
+# Set HF_REPO to your repository, e.g. "your-username/pinn-pipe-flow".
+# When running locally, results/ is used directly (no download needed).
+# When running on Streamlit Cloud, weights are fetched from HF Hub.
+HF_REPO = os.environ.get("HF_REPO", "")          # set this in Streamlit secrets
+
+
+@st.cache_resource(show_spinner=False)
+def get_results_dir() -> str:
+    """Returns the path to the results directory.
+
+    Locally: returns "results/" if it exists.
+    On Streamlit Cloud (or whenever HF_REPO is set): downloads the model
+    artifacts from Hugging Face Hub and returns the local cache path.
+    """
+    local = "results"
+    if os.path.isdir(local):
+        # Running locally - use results/ directly, no download needed.
+        return local
+
+    if not HF_REPO:
+        st.error(
+            "No `results/` directory found and `HF_REPO` is not set.\n\n"
+            "Add `HF_REPO = 'your-username/your-repo'` to your Streamlit secrets "
+            "or set it as an environment variable."
+        )
+        st.stop()
+
+    try:
+        from huggingface_hub import snapshot_download, login
+
+        # Log in if a token is provided (required for private repos).
+        hf_token = st.secrets.get("HF_TOKEN", None)
+        if hf_token:
+            login(token=hf_token)
+
+        with st.spinner("Downloading model weights from Hugging Face Hub…"):
+            path = snapshot_download(repo_id=HF_REPO, repo_type="model")
+        return path
+
+    except Exception as e:
+        st.error(f"Failed to download models from Hugging Face Hub: {e}")
+        st.stop()
+
+
+RESULTS_DIR = get_results_dir()
+
+
+# -----------------------------------------------------------------------------
 # Helper: render plotly chart with current Streamlit width parameter
 # -----------------------------------------------------------------------------
 def render_plotly_chart(fig: go.Figure) -> None:
@@ -42,7 +92,7 @@ def render_plotly_chart(fig: go.Figure) -> None:
 # -----------------------------------------------------------------------------
 # Run scanning & model loader
 # -----------------------------------------------------------------------------
-def get_available_runs(results_dir: str = "results") -> list[str]:
+def get_available_runs(results_dir: str = RESULTS_DIR) -> list[str]:
     """Scans the results directory for valid experiment runs.
 
     A valid run must contain both 'model.pt' and 'config.yaml'.
@@ -68,7 +118,7 @@ def get_available_runs(results_dir: str = "results") -> list[str]:
 
 
 @st.cache_resource(show_spinner=False)
-def load_trained_model(run_name: str, results_dir: str = "results"):
+def load_trained_model(run_name: str, results_dir: str = RESULTS_DIR):
     """Loads and caches a trained PINN model and its configuration.
 
     Args:
