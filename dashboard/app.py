@@ -76,9 +76,6 @@ def get_results_dir() -> str:
 
 
 RESULTS_DIR = get_results_dir()
-st.write("RESULTS_DIR:", RESULTS_DIR)
-st.write("HF_REPO:", st.secrets.get("HF_REPO", "NOT FOUND"))
-st.write("results/ exists locally:", os.path.isdir("results"))
 
 # -----------------------------------------------------------------------------
 # Helper: render plotly chart with current Streamlit width parameter
