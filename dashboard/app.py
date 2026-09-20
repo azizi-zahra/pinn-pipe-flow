@@ -34,7 +34,7 @@ st.set_page_config(
 # Set HF_REPO to your repository, e.g. "your-username/pinn-pipe-flow".
 # When running locally, results/ is used directly (no download needed).
 # When running on Streamlit Cloud, weights are fetched from HF Hub.
-HF_REPO = os.environ.get("HF_REPO", "")          # set this in Streamlit secrets
+HF_REPO = st.secrets.get("HF_REPO", "")          # set this in Streamlit secrets
 
 
 @st.cache_resource(show_spinner=False)
