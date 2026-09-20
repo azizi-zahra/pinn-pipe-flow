@@ -93,27 +93,31 @@ def render_plotly_chart(fig: go.Figure) -> None:
 # -----------------------------------------------------------------------------
 def get_available_runs(results_dir: str = RESULTS_DIR) -> list[str]:
     """Scans the results directory for valid experiment runs.
-
-    A valid run must contain both 'model.pt' and 'config.yaml'.
-
-    Args:
-        results_dir: Path to directory containing experiment runs.
-
-    Returns:
-        Sorted list of experiment folder names.
+    
+    For experiments with the same base name, only the most recent
+    (by timestamp suffix) is kept.
     """
     if not os.path.exists(results_dir):
         return []
 
-    runs = []
+    runs = {}  # base_name -> latest full run name
     for name in sorted(os.listdir(results_dir)):
         run_path = os.path.join(results_dir, name)
-        if os.path.isdir(run_path):
-            has_model = os.path.exists(os.path.join(run_path, "model.pt"))
-            has_config = os.path.exists(os.path.join(run_path, "config.yaml"))
-            if has_model and has_config:
-                runs.append(name)
-    return runs
+        if not os.path.isdir(run_path):
+            continue
+        has_model = os.path.exists(os.path.join(run_path, "model.pt"))
+        has_config = os.path.exists(os.path.join(run_path, "config.yaml"))
+        if not (has_model and has_config):
+            continue
+
+        # Strip timestamp suffix: "exp_001_20250101_120000" -> "exp_001"
+        parts = name.rsplit("_", 2)
+        base_name = parts[0] if len(parts) == 3 else name
+
+        # sorted() means we iterate chronologically, so last one wins
+        runs[base_name] = name
+
+    return sorted(runs.values())
 
 
 @st.cache_resource(show_spinner=False)
