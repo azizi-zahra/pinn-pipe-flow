@@ -148,13 +148,24 @@ def load_run_config(run_dir: str) -> Config:
         data = yaml.safe_load(f)
 
     physics_data = data.get("physics", {})
-    re_min = physics_data["Re_min"] if "Re_min" in physics_data else physics_data["Re_range"]["min"]
-    re_max = physics_data["Re_max"] if "Re_max" in physics_data else physics_data["Re_range"]["max"]
+    if "Re_min" in physics_data:
+        re_min = physics_data["Re_min"]
+    elif "Re_range" in physics_data and isinstance(physics_data["Re_range"], dict):
+        re_min = physics_data["Re_range"].get("min", 100.0)
+    else:
+        re_min = 100.0
+
+    if "Re_max" in physics_data:
+        re_max = physics_data["Re_max"]
+    elif "Re_range" in physics_data and isinstance(physics_data["Re_range"], dict):
+        re_max = physics_data["Re_range"].get("max", 500.0)
+    else:
+        re_max = 500.0
 
     physics = PhysicsConfig(
-        R=float(physics_data["R"]),
-        L=float(physics_data["L"]),
-        nu=float(physics_data["nu"]),
+        R=float(physics_data.get("R", 1.0)),
+        L=float(physics_data.get("L", 20.0)),
+        nu=float(physics_data.get("nu", 0.01)),
         Re_min=float(re_min),
         Re_max=float(re_max),
     )

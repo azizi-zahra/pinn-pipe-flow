@@ -89,8 +89,11 @@ def save_comparison_table(runs: list[dict], results_dir: str) -> None:
         "learning_rate",
         "optimizer",
         "loss_weight_physics",
+        "loss_weight_continuity",
         "loss_weight_bc_wall",
+        "loss_weight_bc_wall_v",
         "loss_weight_bc_symmetry",
+        "loss_weight_bc_inlet",
         "l2_error",
         "max_error",
         "relative_l2_error",
@@ -103,18 +106,22 @@ def save_comparison_table(runs: list[dict], results_dir: str) -> None:
         for run in runs:
             config = run["config"]
             metrics = run["metrics"]
+            training_cfg = config.get("training", {})
             writer.writerow({
                 "experiment_name": run["experiment_name"],
                 "model_type": config["model"]["type"],
                 "hidden_layer_depth": config["model"]["hidden_layer_depth"],
                 "hidden_layer_width": config["model"]["hidden_layer_width"],
                 "activation": config["model"]["activation"],
-                "epochs": config["training"]["epochs"],
-                "learning_rate": config["training"]["learning_rate"],
-                "optimizer": config["training"]["optimizer"],
-                "loss_weight_physics": config["training"]["loss_weight_physics"],
-                "loss_weight_bc_wall": config["training"]["loss_weight_bc_wall"],
-                "loss_weight_bc_symmetry": config["training"]["loss_weight_bc_symmetry"],
+                "epochs": training_cfg.get("epochs", ""),
+                "learning_rate": training_cfg.get("learning_rate", ""),
+                "optimizer": training_cfg.get("optimizer", ""),
+                "loss_weight_physics": training_cfg.get("loss_weight_physics", ""),
+                "loss_weight_continuity": training_cfg.get("loss_weight_continuity", ""),
+                "loss_weight_bc_wall": training_cfg.get("loss_weight_bc_wall", ""),
+                "loss_weight_bc_wall_v": training_cfg.get("loss_weight_bc_wall_v", ""),
+                "loss_weight_bc_symmetry": training_cfg.get("loss_weight_bc_symmetry", ""),
+                "loss_weight_bc_inlet": training_cfg.get("loss_weight_bc_inlet", ""),
                 "l2_error": metrics.get("l2_error", ""),
                 "max_error": metrics.get("max_error", ""),
                 "relative_l2_error": metrics.get("relative_l2_error", ""),
@@ -133,12 +140,18 @@ def plot_comparison(runs: list[dict], results_dir: str) -> None:
         runs: List of run dicts from collect_runs.
         results_dir: Path to the results directory.
     """
-    if not runs:
-        print("No runs found.")
+    valid_runs = [
+        r for r in runs
+        if isinstance(r.get("metrics", {}).get("l2_error"), (int, float))
+        and r["metrics"]["l2_error"] > 0
+    ]
+
+    if not valid_runs:
+        print("No runs with positive l2_error found to plot.")
         return
 
-    experiment_names = [run["experiment_name"] for run in runs]
-    l2_errors = [run["metrics"].get("l2_error", 0) for run in runs]
+    experiment_names = [run["experiment_name"] for run in valid_runs]
+    l2_errors = [run["metrics"]["l2_error"] for run in valid_runs]
 
     fig_height = max(6, len(runs) * 0.45)
     fig, ax = plt.subplots(figsize=(10, fig_height))
