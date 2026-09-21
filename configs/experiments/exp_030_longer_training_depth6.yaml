@@ -1,0 +1,16 @@
+# =============================================================================
+# exp_030_longer_training_depth6.yaml -- deeper architecture & longer training
+# Scales the developing pipe flow PINN to depth 6 and 64,000 epochs to provide
+# sufficient capacity and iterations for non-linear boundary layer resolution.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_030_longer_training_depth6"
+  description: "Scale developing pipe flow PINN to 6 hidden layers and 64,000 epochs based on optimal 1D findings."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 64000
