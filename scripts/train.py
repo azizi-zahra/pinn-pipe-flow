@@ -15,12 +15,13 @@ import os
 from plyer import notification
 
 from pinn_pipe.evaluation import (
+    EVAL_RE_VALUES,
     compute_metrics,
-    plot_error,
     plot_loss_curve,
-    plot_velocity_profile,
+    plot_velocity_field,
+    plot_velocity_profiles,
 )
-from pinn_pipe.models import HardBCMLP, MLP
+from pinn_pipe.models import MLP
 from pinn_pipe.training import Trainer
 from pinn_pipe.utils import (
     create_run_dir,
@@ -77,7 +78,6 @@ def main() -> None:
     # -------------------------------------------------------------------------
     supported_models = {
         "mlp": MLP,
-        "hard_bc_mlp": HardBCMLP,
     }
 
     if config.model.type not in supported_models:
@@ -87,10 +87,7 @@ def main() -> None:
         )
 
     device = get_device(args.device)
-    if config.model.type == "hard_bc_mlp" or getattr(config.model, "hard_bc", False):
-        model = HardBCMLP(config.model, R=config.physics.R)
-    else:
-        model = supported_models[config.model.type](config.model)
+    model = supported_models[config.model.type](config.model)
     model = model.to(device)
     print(f"Model: {model}")
     print(f"Using device: {device}")
@@ -105,9 +102,10 @@ def main() -> None:
     # -------------------------------------------------------------------------
     # Evaluate
     # -------------------------------------------------------------------------
-    plot_velocity_profile(model, config, run_dir)
+    for re_val in EVAL_RE_VALUES:
+        plot_velocity_field(model, config, run_dir, Re_val=re_val)
+        plot_velocity_profiles(model, config, run_dir, Re_val=re_val)
     plot_loss_curve(trainer.history, run_dir)
-    plot_error(model, config, run_dir)
 
     # -------------------------------------------------------------------------
     # Compute and save metrics
