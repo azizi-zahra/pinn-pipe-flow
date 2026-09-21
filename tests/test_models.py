@@ -7,8 +7,7 @@ Checks model construction, output shapes, repr, and error handling.
 import pytest
 import torch
 
-from pinn_pipe.models import BasePINN, HardBCMLP, MLP
-from pinn_pipe.physics import bc_symmetry
+from pinn_pipe.models import BasePINN, MLP
 from pinn_pipe.utils import ModelConfig
 
 
@@ -44,15 +43,15 @@ def test_base_pinn_cannot_be_instantiated():
 
 
 def test_mlp_output_shape(model):
-    """MLP should output shape (N, 1) for input shape (N, 2)."""
-    x = torch.rand(100, 2)
+    """MLP should output shape (N, 2) for input shape (N, 3)."""
+    x = torch.rand(100, 3)
     output = model(x)
-    assert output.shape == (100, 1), f"Expected (100, 1), got {output.shape}"
+    assert output.shape == (100, 2), f"Expected (100, 2), got {output.shape}"
 
 
 def test_mlp_forward_does_not_crash(model):
     """MLP forward pass should run without errors."""
-    x = torch.rand(50, 2)
+    x = torch.rand(50, 3)
     output = model(x)
     assert output is not None
 
@@ -87,49 +86,21 @@ def test_all_supported_activations():
             activation=act,
         )
         m = MLP(cfg)
-        x = torch.rand(10, 2)
+        x = torch.rand(10, 3)
         out = m(x)
-        assert out.shape == (10, 1), f"Failed for activation {act}"
+        assert out.shape == (10, 2), f"Failed for activation {act}"
 
 
 def test_mlp_single_input(model):
-    """MLP should handle a single input point of shape (1, 2)."""
-    x = torch.rand(1, 2)
+    """MLP should handle a single input point of shape (1, 3)."""
+    x = torch.rand(1, 3)
     output = model(x)
-    assert output.shape == (1, 1)
+    assert output.shape == (1, 2)
 
 
 def test_mlp_different_batch_sizes(model):
     """MLP output shape should scale correctly with batch size."""
     for n in [1, 10, 100, 1000]:
-        x = torch.rand(n, 2)
+        x = torch.rand(n, 3)
         output = model(x)
-        assert output.shape == (n, 1), f"Failed for batch size {n}"
-
-
-def test_hard_bc_mlp_exact_wall_condition(default_model_config):
-    """HardBCMLP must satisfy u(R) == 0 identically for all u_max."""
-    R = 1.0
-    hard_model = HardBCMLP(default_model_config, R=R)
-    u_max_vals = torch.linspace(0.5, 2.0, 50).unsqueeze(1)
-    r_wall = torch.full_like(u_max_vals, R)
-    x_wall = torch.cat([r_wall, u_max_vals], dim=1)
-
-    u_pred = hard_model(x_wall)
-    assert torch.allclose(u_pred, torch.zeros_like(u_pred), atol=1e-7), (
-        f"HardBCMLP failed wall no-slip condition: max violation = {torch.max(torch.abs(u_pred)).item()}"
-    )
-
-
-def test_hard_bc_mlp_exact_symmetry_condition(default_model_config):
-    """HardBCMLP must satisfy du/dr(0) == 0 identically for all u_max."""
-    R = 1.0
-    hard_model = HardBCMLP(default_model_config, R=R)
-    u_max_vals = torch.linspace(0.5, 2.0, 50).unsqueeze(1)
-    r_center = torch.zeros_like(u_max_vals)
-
-    deriv = bc_symmetry(hard_model, r_center, u_max_vals)
-
-    assert torch.allclose(deriv, torch.zeros_like(deriv), atol=1e-7), (
-        f"HardBCMLP failed symmetry condition: max violation = {torch.max(torch.abs(deriv)).item()}"
-    )
+        assert output.shape == (n, 2), f"Failed for batch size {n}"

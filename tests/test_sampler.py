@@ -1,15 +1,20 @@
 """
 Tests for training/sampler.py.
 
-Verifies that interior and boundary condition points are sampled
-with correct shapes, ranges, and gradient settings.
+Verifies that interior, wall, symmetry, and inlet collocation points
+are sampled with correct shapes, ranges, and gradient settings.
 """
 
 import pytest
 import torch
 
-from pinn_pipe.training import sample_bc, sample_interior
-from pinn_pipe.utils import PhysicsConfig, SamplingConfig
+from pinn_pipe.training import (
+    sample_bc_inlet,
+    sample_bc_symmetry,
+    sample_bc_wall,
+    sample_interior,
+)
+from pinn_pipe.utils import PhysicsConfig
 
 
 # -----------------------------------------------------------------------------
@@ -21,127 +26,71 @@ def physics_config():
     """Returns a default PhysicsConfig for testing."""
     return PhysicsConfig(
         R=1.0,
-        mu=1.0,
-        u_max_min=0.5,
-        u_max_max=2.0,
+        L=20.0,
+        nu=0.01,
+        Re_min=100.0,
+        Re_max=500.0,
     )
-
-
-@pytest.fixture
-def sampling_config():
-    """Returns a default SamplingConfig for testing."""
-    return SamplingConfig(num_interior_points=100)
 
 
 # -----------------------------------------------------------------------------
-# sample_interior tests
+# Tests
 # -----------------------------------------------------------------------------
 
-def test_sample_interior_output_shapes(physics_config, sampling_config):
-    """sample_interior should return r and u_max of shape (N, 1)."""
-    r, u_max = sample_interior(
-        n=sampling_config.num_interior_points,
-        R=physics_config.R,
-        u_max_min=physics_config.u_max_min,
-        u_max_max=physics_config.u_max_max,
-    )
-    assert r.shape == (sampling_config.num_interior_points, 1)
-    assert u_max.shape == (sampling_config.num_interior_points, 1)
+def test_sample_interior(physics_config):
+    """sample_interior returns (r, x, Re) with correct shapes, ranges, and gradient flags."""
+    r, x, Re = sample_interior(n=100, config=physics_config)
+
+    assert r.shape == (100, 1)
+    assert x.shape == (100, 1)
+    assert Re.shape == (100, 1)
+
+    assert (r > 0).all() and (r <= physics_config.R).all(), "r should be in (0, R)"
+    assert (x > 0).all() and (x <= physics_config.L).all(), "x should be in (0, L)"
+    assert (Re >= physics_config.Re_min).all() and (Re <= physics_config.Re_max).all(), "Re out of bounds"
+
+    assert r.requires_grad is True
+    assert x.requires_grad is True
 
 
-def test_sample_interior_r_in_valid_range(physics_config, sampling_config):
-    """Interior r values should be in (0, R)."""
-    r, _ = sample_interior(
-        n=sampling_config.num_interior_points,
-        R=physics_config.R,
-        u_max_min=physics_config.u_max_min,
-        u_max_max=physics_config.u_max_max,
-    )
-    assert (r >= 0).all(), "r should be non-negative"
-    assert (r <= physics_config.R).all(), "r should not exceed R"
+def test_sample_bc_wall(physics_config):
+    """sample_bc_wall returns (r_wall, x_bc, Re_bc) with wall values and gradient settings."""
+    r_wall, x_bc, Re_bc = sample_bc_wall(n=100, config=physics_config)
+
+    assert r_wall.shape == (100, 1)
+    assert x_bc.shape == (100, 1)
+    assert Re_bc.shape == (100, 1)
+
+    assert torch.all(r_wall == physics_config.R), "r_wall should all equal R"
+    assert (x_bc >= 0).all() and (x_bc <= physics_config.L).all(), "x_bc should be in (0, L)"
+    assert (Re_bc >= physics_config.Re_min).all() and (Re_bc <= physics_config.Re_max).all(), "Re_bc out of bounds"
+
+    assert r_wall.requires_grad is True
 
 
-def test_sample_interior_u_max_in_valid_range(physics_config, sampling_config):
-    """Interior u_max values should be in (u_max_min, u_max_max)."""
-    _, u_max = sample_interior(
-        n=sampling_config.num_interior_points,
-        R=physics_config.R,
-        u_max_min=physics_config.u_max_min,
-        u_max_max=physics_config.u_max_max,
-    )
-    assert (u_max >= physics_config.u_max_min).all()
-    assert (u_max <= physics_config.u_max_max).all()
+def test_sample_bc_symmetry(physics_config):
+    """sample_bc_symmetry returns (r_sym, x_bc, Re_bc) with symmetry values and gradient settings."""
+    r_sym, x_bc, Re_bc = sample_bc_symmetry(n=100, config=physics_config)
+
+    assert r_sym.shape == (100, 1)
+    assert x_bc.shape == (100, 1)
+    assert Re_bc.shape == (100, 1)
+
+    assert torch.all(r_sym == 0), "r_sym should all equal 0"
+    assert (x_bc >= 0).all() and (x_bc <= physics_config.L).all(), "x_bc should be in (0, L)"
+    assert (Re_bc >= physics_config.Re_min).all() and (Re_bc <= physics_config.Re_max).all(), "Re_bc out of bounds"
+
+    assert r_sym.requires_grad is True
 
 
-def test_sample_interior_r_requires_grad(physics_config, sampling_config):
-    """Interior r should have requires_grad=True for autograd."""
-    r, _ = sample_interior(
-        n=sampling_config.num_interior_points,
-        R=physics_config.R,
-        u_max_min=physics_config.u_max_min,
-        u_max_max=physics_config.u_max_max,
-    )
-    assert r.requires_grad, "r must have requires_grad=True"
+def test_sample_bc_inlet(physics_config):
+    """sample_bc_inlet returns (r_inlet, x_inlet, Re_bc) with inlet values."""
+    r_inlet, x_inlet, Re_bc = sample_bc_inlet(n=100, config=physics_config)
 
+    assert r_inlet.shape == (100, 1)
+    assert x_inlet.shape == (100, 1)
+    assert Re_bc.shape == (100, 1)
 
-# -----------------------------------------------------------------------------
-# sample_bc tests
-# -----------------------------------------------------------------------------
-
-def test_sample_bc_output_shapes(physics_config, sampling_config):
-    """sample_bc should return r_wall, r_sym, u_max_bc of shape (N, 1)."""
-    r_wall, r_sym, u_max_bc = sample_bc(
-        n=sampling_config.num_interior_points,
-        R=physics_config.R,
-        u_max_min=physics_config.u_max_min,
-        u_max_max=physics_config.u_max_max,
-    )
-    assert r_wall.shape == (sampling_config.num_interior_points, 1)
-    assert r_sym.shape == (sampling_config.num_interior_points, 1)
-    assert u_max_bc.shape == (sampling_config.num_interior_points, 1)
-
-
-def test_sample_bc_r_wall_equals_R(physics_config, sampling_config):
-    """r_wall should be exactly R everywhere."""
-    r_wall, _, _ = sample_bc(
-        n=sampling_config.num_interior_points,
-        R=physics_config.R,
-        u_max_min=physics_config.u_max_min,
-        u_max_max=physics_config.u_max_max,
-    )
-    assert torch.all(r_wall == physics_config.R), "r_wall should equal R everywhere"
-
-
-def test_sample_bc_r_sym_equals_zero(physics_config, sampling_config):
-    """r_sym should be exactly zero everywhere."""
-    _, r_sym, _ = sample_bc(
-        n=sampling_config.num_interior_points,
-        R=physics_config.R,
-        u_max_min=physics_config.u_max_min,
-        u_max_max=physics_config.u_max_max,
-    )
-    assert torch.all(r_sym == 0), "r_sym should equal zero everywhere"
-
-
-def test_sample_bc_u_max_in_valid_range(physics_config, sampling_config):
-    """BC u_max values should be in (u_max_min, u_max_max)."""
-    _, _, u_max_bc = sample_bc(
-        n=sampling_config.num_interior_points,
-        R=physics_config.R,
-        u_max_min=physics_config.u_max_min,
-        u_max_max=physics_config.u_max_max,
-    )
-    assert (u_max_bc >= physics_config.u_max_min).all()
-    assert (u_max_bc <= physics_config.u_max_max).all()
-
-
-def test_sample_bc_requires_grad(physics_config, sampling_config):
-    """r_wall and r_sym should have requires_grad=True."""
-    r_wall, r_sym, _ = sample_bc(
-        n=sampling_config.num_interior_points,
-        R=physics_config.R,
-        u_max_min=physics_config.u_max_min,
-        u_max_max=physics_config.u_max_max,
-    )
-    assert r_wall.requires_grad, "r_wall must have requires_grad=True"
-    assert r_sym.requires_grad, "r_sym must have requires_grad=True"
+    assert torch.all(x_inlet == 0), "x_inlet should all equal 0"
+    assert (r_inlet >= 0).all() and (r_inlet <= physics_config.R).all(), "r_inlet should be in (0, R)"
+    assert (Re_bc >= physics_config.Re_min).all() and (Re_bc <= physics_config.Re_max).all(), "Re_bc out of bounds"

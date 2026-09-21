@@ -28,7 +28,7 @@ def dummy_model():
 def dummy_config():
     """Returns a valid Config object for trainer testing."""
     return Config(
-        physics=PhysicsConfig(R=1.0, mu=1.0, u_max_min=0.5, u_max_max=2.0),
+        physics=PhysicsConfig(R=1.0, L=20.0, nu=0.01, Re_min=100.0, Re_max=500.0),
         model=ModelConfig(
             type="mlp",
             hidden_layer_depth=2,
@@ -41,8 +41,11 @@ def dummy_config():
             learning_rate=0.001,
             optimizer="adam",
             loss_weight_physics=1.0,
+            loss_weight_continuity=1.0,
             loss_weight_bc_wall=1.0,
+            loss_weight_bc_wall_v=1.0,
             loss_weight_bc_symmetry=1.0,
+            loss_weight_bc_inlet=10.0,
         ),
         run=RunConfig(seed=42, dtype="float64"),
     )
@@ -61,6 +64,7 @@ def test_build_lr_scheduler_cosine(dummy_model):
     sched = build_lr_scheduler(opt, "cosine", 100, {"eta_min": 1e-6})
     assert isinstance(sched, torch.optim.lr_scheduler.CosineAnnealingLR)
     initial_lr = opt.param_groups[0]["lr"]
+    opt.step()
     sched.step()
     stepped_lr = opt.param_groups[0]["lr"]
     assert stepped_lr <= initial_lr
