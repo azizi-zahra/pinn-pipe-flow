@@ -12,7 +12,12 @@ import torch
 
 from pinn_pipe.models import BasePINN
 from pinn_pipe.training.losses import total_loss
-from pinn_pipe.training.sampler import sample_bc, sample_interior
+from pinn_pipe.training.sampler import (
+    sample_bc_inlet,
+    sample_bc_symmetry,
+    sample_bc_wall,
+    sample_interior,
+)
 from pinn_pipe.training.scheduler import build_lr_scheduler
 from pinn_pipe.utils import Config, save_config, save_history, save_model
 
@@ -100,10 +105,17 @@ class Trainer:
 
         # fixed points for LBFGS phase -- populated at switch epoch
         r_fixed: Optional[torch.Tensor] = None
-        u_max_fixed: Optional[torch.Tensor] = None
+        x_fixed: Optional[torch.Tensor] = None
+        Re_fixed: Optional[torch.Tensor] = None
         r_wall_fixed: Optional[torch.Tensor] = None
+        x_bc_wall_fixed: Optional[torch.Tensor] = None
+        Re_bc_wall_fixed: Optional[torch.Tensor] = None
         r_sym_fixed: Optional[torch.Tensor] = None
-        u_max_bc_fixed: Optional[torch.Tensor] = None
+        x_bc_sym_fixed: Optional[torch.Tensor] = None
+        Re_bc_sym_fixed: Optional[torch.Tensor] = None
+        r_inlet_fixed: Optional[torch.Tensor] = None
+        x_inlet_fixed: Optional[torch.Tensor] = None
+        Re_bc_inlet_fixed: Optional[torch.Tensor] = None
 
         for epoch in range(1, self.config.training.epochs + 1):
 
@@ -127,49 +139,80 @@ class Trainer:
                 self.scheduler = None
 
                 # fix sampling points for entire LBFGS phase
-                r_fixed, u_max_fixed = sample_interior(
+                r_fixed, x_fixed, Re_fixed = sample_interior(
                     n=self.config.sampling.num_interior_points,
-                    R=self.config.physics.R,
-                    u_max_min=self.config.physics.u_max_min,
-                    u_max_max=self.config.physics.u_max_max,
+                    config=self.config.physics,
                 )
-                r_wall_fixed, r_sym_fixed, u_max_bc_fixed = sample_bc(
+                r_wall_fixed, x_bc_wall_fixed, Re_bc_wall_fixed = sample_bc_wall(
                     n=self.config.sampling.num_interior_points,
-                    R=self.config.physics.R,
-                    u_max_min=self.config.physics.u_max_min,
-                    u_max_max=self.config.physics.u_max_max,
+                    config=self.config.physics,
                 )
+                r_sym_fixed, x_bc_sym_fixed, Re_bc_sym_fixed = sample_bc_symmetry(
+                    n=self.config.sampling.num_interior_points,
+                    config=self.config.physics,
+                )
+                r_inlet_fixed, x_inlet_fixed, Re_bc_inlet_fixed = sample_bc_inlet(
+                    n=self.config.sampling.num_interior_points,
+                    config=self.config.physics,
+                )
+
                 r_fixed = r_fixed.to(self.device)
-                u_max_fixed = u_max_fixed.to(self.device)
+                x_fixed = x_fixed.to(self.device)
+                Re_fixed = Re_fixed.to(self.device)
                 r_wall_fixed = r_wall_fixed.to(self.device)
+                x_bc_wall_fixed = x_bc_wall_fixed.to(self.device)
+                Re_bc_wall_fixed = Re_bc_wall_fixed.to(self.device)
                 r_sym_fixed = r_sym_fixed.to(self.device)
-                u_max_bc_fixed = u_max_bc_fixed.to(self.device)
+                x_bc_sym_fixed = x_bc_sym_fixed.to(self.device)
+                Re_bc_sym_fixed = Re_bc_sym_fixed.to(self.device)
+                r_inlet_fixed = r_inlet_fixed.to(self.device)
+                x_inlet_fixed = x_inlet_fixed.to(self.device)
+                Re_bc_inlet_fixed = Re_bc_inlet_fixed.to(self.device)
 
             # use fixed points during LBFGS phase, fresh points during Adam phase
             if self.is_hybrid and epoch > self.switch_epoch:
                 r = r_fixed
-                u_max = u_max_fixed
+                x = x_fixed
+                Re = Re_fixed
                 r_wall = r_wall_fixed
+                x_bc_wall = x_bc_wall_fixed
+                Re_bc_wall = Re_bc_wall_fixed
                 r_sym = r_sym_fixed
-                u_max_bc = u_max_bc_fixed
+                x_bc_sym = x_bc_sym_fixed
+                Re_bc_sym = Re_bc_sym_fixed
+                r_inlet = r_inlet_fixed
+                x_inlet = x_inlet_fixed
+                Re_bc_inlet = Re_bc_inlet_fixed
             else:
-                r, u_max = sample_interior(
+                r, x, Re = sample_interior(
                     n=self.config.sampling.num_interior_points,
-                    R=self.config.physics.R,
-                    u_max_min=self.config.physics.u_max_min,
-                    u_max_max=self.config.physics.u_max_max,
+                    config=self.config.physics,
                 )
-                r_wall, r_sym, u_max_bc = sample_bc(
+                r_wall, x_bc_wall, Re_bc_wall = sample_bc_wall(
                     n=self.config.sampling.num_interior_points,
-                    R=self.config.physics.R,
-                    u_max_min=self.config.physics.u_max_min,
-                    u_max_max=self.config.physics.u_max_max,
+                    config=self.config.physics,
                 )
+                r_sym, x_bc_sym, Re_bc_sym = sample_bc_symmetry(
+                    n=self.config.sampling.num_interior_points,
+                    config=self.config.physics,
+                )
+                r_inlet, x_inlet, Re_bc_inlet = sample_bc_inlet(
+                    n=self.config.sampling.num_interior_points,
+                    config=self.config.physics,
+                )
+
                 r = r.to(self.device)
-                u_max = u_max.to(self.device)
+                x = x.to(self.device)
+                Re = Re.to(self.device)
                 r_wall = r_wall.to(self.device)
+                x_bc_wall = x_bc_wall.to(self.device)
+                Re_bc_wall = Re_bc_wall.to(self.device)
                 r_sym = r_sym.to(self.device)
-                u_max_bc = u_max_bc.to(self.device)
+                x_bc_sym = x_bc_sym.to(self.device)
+                Re_bc_sym = Re_bc_sym.to(self.device)
+                r_inlet = r_inlet.to(self.device)
+                x_inlet = x_inlet.to(self.device)
+                Re_bc_inlet = Re_bc_inlet.to(self.device)
 
             if isinstance(self.optimizer, torch.optim.LBFGS):
                 def closure():
@@ -177,23 +220,38 @@ class Trainer:
                     losses = total_loss(
                         model=self.model,
                         r=r,
-                        u_max=u_max,
+                        x=x,
+                        Re=Re,
                         r_wall=r_wall,
+                        x_bc_wall=x_bc_wall,
+                        Re_bc_wall=Re_bc_wall,
                         r_sym=r_sym,
-                        u_max_bc=u_max_bc,
+                        x_bc_sym=x_bc_sym,
+                        Re_bc_sym=Re_bc_sym,
+                        r_inlet=r_inlet,
+                        x_inlet=x_inlet,
+                        Re_bc_inlet=Re_bc_inlet,
                         physics_config=self.config.physics,
                         training_config=self.config.training,
                     )
                     losses["loss_total_tensor"].backward()
                     return losses["loss_total_tensor"]
+
                 self.optimizer.step(closure)
                 losses = total_loss(
                     model=self.model,
                     r=r,
-                    u_max=u_max,
+                    x=x,
+                    Re=Re,
                     r_wall=r_wall,
+                    x_bc_wall=x_bc_wall,
+                    Re_bc_wall=Re_bc_wall,
                     r_sym=r_sym,
-                    u_max_bc=u_max_bc,
+                    x_bc_sym=x_bc_sym,
+                    Re_bc_sym=Re_bc_sym,
+                    r_inlet=r_inlet,
+                    x_inlet=x_inlet,
+                    Re_bc_inlet=Re_bc_inlet,
                     physics_config=self.config.physics,
                     training_config=self.config.training,
                 )
@@ -201,10 +259,17 @@ class Trainer:
                 losses = total_loss(
                     model=self.model,
                     r=r,
-                    u_max=u_max,
+                    x=x,
+                    Re=Re,
                     r_wall=r_wall,
+                    x_bc_wall=x_bc_wall,
+                    Re_bc_wall=Re_bc_wall,
                     r_sym=r_sym,
-                    u_max_bc=u_max_bc,
+                    x_bc_sym=x_bc_sym,
+                    Re_bc_sym=Re_bc_sym,
+                    r_inlet=r_inlet,
+                    x_inlet=x_inlet,
+                    Re_bc_inlet=Re_bc_inlet,
                     physics_config=self.config.physics,
                     training_config=self.config.training,
                 )
@@ -225,9 +290,12 @@ class Trainer:
             self.history.append({
                 "epoch": epoch,
                 "loss_total": losses["loss_total"],
-                "loss_physics": losses["loss_physics"],
+                "loss_momentum": losses["loss_momentum"],
+                "loss_continuity": losses["loss_continuity"],
                 "loss_bc_wall": losses["loss_bc_wall"],
+                "loss_bc_wall_v": losses["loss_bc_wall_v"],
                 "loss_bc_symmetry": losses["loss_bc_symmetry"],
+                "loss_bc_inlet": losses["loss_bc_inlet"],
                 "lr": current_lr,
             })
 
@@ -236,9 +304,9 @@ class Trainer:
                 print(
                     f"Epoch {epoch:>5}/{self.config.training.epochs} | "
                     f"Total: {losses['loss_total']:.4e} | "
-                    f"Physics: {losses['loss_physics']:.4e} | "
-                    f"BC Wall: {losses['loss_bc_wall']:.4e} | "
-                    f"BC Sym: {losses['loss_bc_symmetry']:.4e} | "
+                    f"Momentum: {losses['loss_momentum']:.4e} | "
+                    f"Continuity: {losses['loss_continuity']:.4e} | "
+                    f"Inlet: {losses['loss_bc_inlet']:.4e} | "
                     f"LR: {current_lr:.2e}"
                 )
 

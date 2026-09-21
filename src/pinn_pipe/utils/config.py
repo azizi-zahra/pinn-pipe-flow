@@ -7,29 +7,26 @@ validated Config dataclass that is passed through the entire pipeline.
 
 import os
 from dataclasses import dataclass
+from typing import Any, Dict, Optional
 
 import yaml
-
-
-from typing import Any, Dict, Optional
 
 
 @dataclass
 class PhysicsConfig:
     R: float          # pipe radius
-    mu: float         # dynamic viscosity
-    u_max_min: float  # minimum u_max sampled during training
-    u_max_max: float  # maximum u_max sampled during training
+    L: float          # pipe length (domain in x direction)
+    nu: float         # kinematic viscosity
+    Re_min: float     # minimum Re sampled during training
+    Re_max: float     # maximum Re sampled during training
 
 
 @dataclass
 class ModelConfig:
-    type: str               # model architecture, e.g. "mlp", "hard_bc_mlp"
+    type: str               # model architecture, e.g. "mlp"
     hidden_layer_depth: int
     hidden_layer_width: int
     activation: str         # e.g. "tanh", "silu", "gelu", "sin", "mish"
-    hard_bc: bool = False   # if True, enforces exact no-slip and symmetry via ansatz
-    pipe_radius: float = 1.0
 
 
 @dataclass
@@ -43,8 +40,11 @@ class TrainingConfig:
     learning_rate: float
     optimizer: str          # "adam", "sgd", "lbfgs", "hybrid"
     loss_weight_physics: float
+    loss_weight_continuity: float
     loss_weight_bc_wall: float
+    loss_weight_bc_wall_v: float
     loss_weight_bc_symmetry: float
+    loss_weight_bc_inlet: float
     lr_scheduler: Optional[str] = None
     lr_scheduler_params: Optional[Dict[str, Any]] = None
     hybrid_switch_epoch: Optional[int] = None
@@ -104,17 +104,16 @@ def load_config(base_path: str, experiment_path: str) -> Config:
     return Config(
         physics=PhysicsConfig(
             R=base_data["physics"]["R"],
-            mu=base_data["physics"]["mu"],
-            u_max_min=base_data["physics"]["u_max_range"]["min"],
-            u_max_max=base_data["physics"]["u_max_range"]["max"],
+            L=base_data["physics"]["L"],
+            nu=base_data["physics"]["nu"],
+            Re_min=base_data["physics"]["Re_range"]["min"],
+            Re_max=base_data["physics"]["Re_range"]["max"],
         ),
         model=ModelConfig(
             type=base_data["model"]["type"],
             hidden_layer_depth=base_data["model"]["hidden_layer_depth"],
             hidden_layer_width=base_data["model"]["hidden_layer_width"],
             activation=base_data["model"]["activation"],
-            hard_bc=base_data["model"].get("hard_bc", False),
-            pipe_radius=base_data["model"].get("pipe_radius", base_data["physics"]["R"]),
         ),
         sampling=SamplingConfig(
             num_interior_points=base_data["sampling"]["num_interior_points"],
@@ -124,8 +123,11 @@ def load_config(base_path: str, experiment_path: str) -> Config:
             learning_rate=base_data["training"]["learning_rate"],
             optimizer=base_data["training"]["optimizer"],
             loss_weight_physics=base_data["training"]["loss_weight_physics"],
+            loss_weight_continuity=base_data["training"]["loss_weight_continuity"],
             loss_weight_bc_wall=base_data["training"]["loss_weight_bc_wall"],
+            loss_weight_bc_wall_v=base_data["training"]["loss_weight_bc_wall_v"],
             loss_weight_bc_symmetry=base_data["training"]["loss_weight_bc_symmetry"],
+            loss_weight_bc_inlet=base_data["training"]["loss_weight_bc_inlet"],
             lr_scheduler=base_data["training"].get("lr_scheduler", None),
             lr_scheduler_params=base_data["training"].get("lr_scheduler_params", None),
             hybrid_switch_epoch=base_data["training"].get("hybrid_switch_epoch", None),
@@ -150,13 +152,22 @@ def validate_config(config: Config) -> None:
     if config.physics.R <= 0:
         raise ValueError(f"R must be positive, got {config.physics.R}")
 
-    if config.physics.mu <= 0:
-        raise ValueError(f"mu must be positive, got {config.physics.mu}")
+    if config.physics.L <= 0:
+        raise ValueError(f"L must be positive, got {config.physics.L}")
 
-    if config.physics.u_max_min >= config.physics.u_max_max:
+    if config.physics.nu <= 0:
+        raise ValueError(f"nu must be positive, got {config.physics.nu}")
+
+    if config.physics.Re_min < 1:
+        raise ValueError(f"Re_min must be >= 1, got {config.physics.Re_min}")
+
+    if config.physics.Re_max > 2300:
+        raise ValueError(f"Re_max must be <= 2300, got {config.physics.Re_max}")
+
+    if config.physics.Re_min >= config.physics.Re_max:
         raise ValueError(
-            f"u_max_range.min must be less than u_max_range.max, "
-            f"got min={config.physics.u_max_min}, max={config.physics.u_max_max}"
+            f"Re_min must be less than Re_max, "
+            f"got min={config.physics.Re_min}, max={config.physics.Re_max}"
         )
 
     if config.training.epochs <= 0:

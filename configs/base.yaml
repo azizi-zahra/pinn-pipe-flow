@@ -4,34 +4,37 @@
 # =============================================================================
 
 physics:
-  R: 1.0            # pipe radius
-  mu: 1.0           # dynamic viscosity
-  u_max_range:
-    min: 0.5        # minimum u_max sampled during training
-    max: 2.0        # maximum u_max sampled during training
+  R: 1.0            # pipe radius [m]
+  L: 20.0           # pipe length [m] (must be >= entry length for chosen Re)
+  nu: 0.01          # kinematic viscosity [m^2/s]
+  Re_range:
+    min: 100.0      # minimum Re sampled during training
+    max: 500.0      # maximum Re sampled during training
 
 model:
-  type: "mlp"                   # architecture: "mlp" or "hard_bc_mlp"
-  hidden_layer_depth: 3
-  hidden_layer_width: 32
-  activation: "tanh"            # "tanh", "relu", "sigmoid", "silu", "gelu", "sin", "mish"
-  hard_bc: false                # true to enforce hard Dirichlet and Neumann BCs via ansatz
+  type: "mlp"
+  hidden_layer_depth: 4
+  hidden_layer_width: 64
+  activation: "tanh"
 
 sampling:
-  num_interior_points: 1000   # collocation points sampled inside the pipe
+  num_interior_points: 2000   # collocation points sampled in the 2D domain
 
 training:
-  epochs: 4000
+  epochs: 10000
   learning_rate: 0.001
-  optimizer: "adam"             # "adam", "sgd", "lbfgs", "hybrid"
-  loss_weight_physics: 1.0      # weight for PDE residual loss
-  loss_weight_bc_wall: 1.0      # weight for no-slip BC at r=R (set 0.0 if hard_bc is true)
-  loss_weight_bc_symmetry: 1.0  # weight for symmetry BC at r=0 (set 0.0 if hard_bc is true)
-  lr_scheduler: null            # "cosine", "step", "multistep", "plateau", "exponential", or null
-  lr_scheduler_params: {}       # scheduler-specific parameters
-  hybrid_switch_epoch: null     # epoch to switch from Adam to L-BFGS (if optimizer is "hybrid")
-  lbfgs_learning_rate: 1.0      # learning rate for L-BFGS phase (if optimizer is "hybrid")
+  optimizer: "adam"
+  loss_weight_physics: 1.0        # axial momentum PDE residual
+  loss_weight_continuity: 1.0     # continuity equation residual
+  loss_weight_bc_wall: 1.0        # no-slip u(R,x)=0
+  loss_weight_bc_wall_v: 1.0      # no radial flow v(R,x)=0
+  loss_weight_bc_symmetry: 1.0    # du/dr(0,x)=0
+  loss_weight_bc_inlet: 10.0      # flat inlet u(r,0)=U_in (higher weight: hard constraint)
+  lr_scheduler: null
+  lr_scheduler_params: {}
+  hybrid_switch_epoch: null
+  lbfgs_learning_rate: 0.1
 
 run:
   seed: 42
-  dtype: "float64"
+  dtype: "float32"              # float32 sufficient; float64 not needed for 2D problem

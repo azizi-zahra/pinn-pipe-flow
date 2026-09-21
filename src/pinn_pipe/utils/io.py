@@ -73,7 +73,8 @@ def save_history(history: list[dict], run_dir: str) -> None:
     """Saves per-epoch training history to the run directory as history.csv.
 
     Each entry in history is a dict with keys like epoch, total_loss,
-    physics_loss, bc_wall_loss, bc_symmetry_loss, learning_rate.
+    loss_momentum, loss_continuity, loss_bc_wall, loss_bc_wall_v,
+    loss_bc_symmetry, loss_bc_inlet, lr.
 
     Args:
         history: List of dicts, one per epoch.
@@ -147,17 +148,15 @@ def load_run_config(run_dir: str) -> Config:
         data = yaml.safe_load(f)
 
     physics_data = data.get("physics", {})
-    u_max_min = physics_data.get("u_max_min")
-    u_max_max = physics_data.get("u_max_max")
-    if u_max_min is None and "u_max_range" in physics_data:
-        u_max_min = physics_data["u_max_range"]["min"]
-        u_max_max = physics_data["u_max_range"]["max"]
+    re_min = physics_data["Re_min"] if "Re_min" in physics_data else physics_data["Re_range"]["min"]
+    re_max = physics_data["Re_max"] if "Re_max" in physics_data else physics_data["Re_range"]["max"]
 
     physics = PhysicsConfig(
         R=float(physics_data["R"]),
-        mu=float(physics_data["mu"]),
-        u_max_min=float(u_max_min),
-        u_max_max=float(u_max_max),
+        L=float(physics_data["L"]),
+        nu=float(physics_data["nu"]),
+        Re_min=float(re_min),
+        Re_max=float(re_max),
     )
 
     model_data = data.get("model", {})
@@ -166,8 +165,6 @@ def load_run_config(run_dir: str) -> Config:
         hidden_layer_depth=int(model_data["hidden_layer_depth"]),
         hidden_layer_width=int(model_data["hidden_layer_width"]),
         activation=str(model_data["activation"]),
-        hard_bc=bool(model_data.get("hard_bc", False)),
-        pipe_radius=float(model_data.get("pipe_radius", physics.R)),
     )
 
     sampling_data = data.get("sampling", {})
@@ -181,8 +178,11 @@ def load_run_config(run_dir: str) -> Config:
         learning_rate=float(training_data["learning_rate"]),
         optimizer=str(training_data["optimizer"]),
         loss_weight_physics=float(training_data["loss_weight_physics"]),
+        loss_weight_continuity=float(training_data.get("loss_weight_continuity", 1.0)),
         loss_weight_bc_wall=float(training_data["loss_weight_bc_wall"]),
+        loss_weight_bc_wall_v=float(training_data.get("loss_weight_bc_wall_v", 1.0)),
         loss_weight_bc_symmetry=float(training_data["loss_weight_bc_symmetry"]),
+        loss_weight_bc_inlet=float(training_data.get("loss_weight_bc_inlet", 10.0)),
         lr_scheduler=training_data.get("lr_scheduler", None),
         lr_scheduler_params=training_data.get("lr_scheduler_params", None),
         hybrid_switch_epoch=training_data.get("hybrid_switch_epoch", None),
