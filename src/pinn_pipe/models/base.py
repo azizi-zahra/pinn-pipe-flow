@@ -18,9 +18,9 @@ class BasePINN(ABC):
         """Computes the predicted velocity for a batch of input points.
 
         Args:
-            x: Tensor of shape (N, 2) where each row is [r, u_max].
+            x: Tensor of shape (N, 3) where each row is [r/R, x/L, Re].
 
         Returns:
-            Tensor of shape (N, 1) containing the predicted velocity at each point.
+            Tensor of shape (N, 2) containing [u, v] at each point.
         """
         pass

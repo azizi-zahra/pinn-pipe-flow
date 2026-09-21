@@ -1,9 +1,9 @@
 """
 MLP model for pinn-pipe-flow.
 
-Implements a fully connected feedforward  neural network that inherits 
-from BasePINN. Takas radial position r and maximum velocity u_max as
-input and predicts the fluid velocity at that point.
+Implements a fully connected feedforward neural network that inherits 
+from BasePINN. Takes normalized coordinates (r/R, x/L, Re) as
+input and predicts the fluid velocities (u, v) at that point.
 """
 
 import torch
@@ -31,8 +31,8 @@ class MLP(BasePINN, nn.Module):
     """Fully connected feedforward neural network for pipe flow velocity prediction.
     
     Architecture: Linear -> [Activation -> Linear] * depth -> Activation -> Linear
-    Input size: 2 (r, u_max)
-    Output size: 1 (predicted velocity)
+    Input size: 3 (r/R, x/L, Re)
+    Output size: 2 (u, v)
     """
     
     def __init__(self, config: ModelConfig) -> None:
@@ -69,33 +69,33 @@ class MLP(BasePINN, nn.Module):
         activation = activations[config.activation]
         
         net = []
-        net.append(nn.Linear(2, config.hidden_layer_width))
+        net.append(nn.Linear(3, config.hidden_layer_width))
         for _ in range(config.hidden_layer_depth):
             net.append(activation)
             net.append(nn.Linear(config.hidden_layer_width, config.hidden_layer_width))        
         net.append(activation)
-        net.append(nn.Linear(config.hidden_layer_width, 1))
+        net.append(nn.Linear(config.hidden_layer_width, 2))
         
         self.net = nn.Sequential(*net)
         
     def __repr__(self) -> str:
         """Returns a string summary of the model architecture."""
-        return(
+        return (
             f"MLP("
-            f"input=2, "
+            f"input=3, "
             f"hidden_layers={self.config.hidden_layer_depth}, "
             f"width={self.config.hidden_layer_width}, "
             f"activation={self.config.activation}, "
-            f"output=1)"
+            f"output=2)"
         )
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Computes the predicted velocity for a batch of input points.
 
         Args:
-            x: Tensor of shape (N, 2) where each row is [r, u_max].
+            x: Tensor of shape (N, 3) where each row is [r/R, x/L, Re].
 
         Returns:
-            Tensor of shape (N, 1) containing the predicted velocity at each point.
+            Tensor of shape (N, 2) where columns are [u, v].
         """
         return self.net(x)
