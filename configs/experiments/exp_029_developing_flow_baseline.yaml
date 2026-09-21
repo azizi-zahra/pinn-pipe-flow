@@ -1,0 +1,11 @@
+# =============================================================================
+# exp_029_developing_flow_baseline.yaml -- baseline developing flow experiment
+# First experiment with the new (r/R, x/L, Re) -> (u, v) formulation.
+# All settings are inherited from base.yaml unless overridden below.
+# =============================================================================
+
+metadata:
+  name: "exp_029_developing_flow_baseline"
+  description: "Baseline developing pipe flow PINN. Inputs: (r/R, x/L, Re). Outputs: (u, v). Physics: boundary layer equations + continuity. Re range: 100-500. No changes from base.yaml defaults."
+
+overrides:
