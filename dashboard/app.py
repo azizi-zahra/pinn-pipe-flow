@@ -634,7 +634,15 @@ if is_2d:
                 line=dict(color="#9467bd", width=2.5),
             )
         )
-        fig_v.add_hline(y=0.0, line_dash="dash", line_color="gray")
+        fig_v.add_trace(
+            go.Scatter(
+                x=r_line,
+                y=np.zeros_like(r_line),
+                mode="lines",
+                name="Zero reference (v = 0)",
+                line=dict(color="#7f7f7f", width=1.5, dash="dash"),
+            )
+        )
         fig_v.update_layout(
             title=dict(
                 text=f"Plot 5: Radial Velocity Component v(r) at x = {x_val:.1f} m",
@@ -644,6 +652,8 @@ if is_2d:
             yaxis_title="Radial velocity v [m/s]",
             template="plotly_white",
             hovermode="x unified",
+            showlegend=True,
+            legend=dict(yanchor="top", y=0.98, xanchor="right", x=0.98),
             margin=dict(l=40, r=40, t=50, b=40),
         )
         render_plotly_chart(fig_v)
