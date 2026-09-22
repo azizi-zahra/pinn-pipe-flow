@@ -1,0 +1,16 @@
+# =============================================================================
+# exp_031_re_norm_high_inlet.yaml -- tests Re normalization and high inlet weight.
+# Re is normalized to [0,1] before network input to fix poorly conditioned inputs.
+# Inlet BC weight raised to 100.0 to prevent zero-collapse seen in exp_029/030.
+# =============================================================================
+
+metadata:
+  name: "exp_031_re_norm_high_inlet"
+  description: "Test Re normalization fix with inlet BC weight raised to 100.0. Depth 6 kept from exp_030."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 30000
+    loss_weight_bc_inlet: 100.0
