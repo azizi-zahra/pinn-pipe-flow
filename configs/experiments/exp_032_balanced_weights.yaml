@@ -1,0 +1,22 @@
+# =============================================================================
+# exp_032_balanced_weights.yaml -- balanced BC loss weights.
+# Previous experiments showed either zero-collapse (inlet weight too low)
+# or Re-averaged constant (inlet weight too high at 100). This experiment
+# balances wall and inlet BCs equally to force correct profile shape.
+# =============================================================================
+
+metadata:
+  name: "exp_032_balanced_weights"
+  description: "Equal wall and inlet BC weights at 10.0, physics and continuity at 1.0. Depth 6, 30000 epochs."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  training:
+    epochs: 30000
+    loss_weight_physics: 1.0
+    loss_weight_continuity: 1.0
+    loss_weight_bc_wall: 10.0
+    loss_weight_bc_wall_v: 10.0
+    loss_weight_bc_symmetry: 1.0
+    loss_weight_bc_inlet: 10.0
