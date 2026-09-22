@@ -54,7 +54,8 @@ def pde_residual_momentum(
     Returns:
         Tensor of shape (N, 1) containing the momentum residual at each point.
     """
-    inp = torch.cat([r / config.R, x / config.L, Re], dim=1)
+    Re_norm = (Re - config.Re_min) / (config.Re_max - config.Re_min)
+    inp = torch.cat([r / config.R, x / config.L, Re_norm], dim=1)
     out = model(inp)
     u = out[:, 0:1]
     v = out[:, 1:2]
@@ -90,7 +91,8 @@ def pde_residual_continuity(
     Returns:
         Tensor of shape (N, 1) containing the continuity residual at each point.
     """
-    inp = torch.cat([r / config.R, x / config.L, Re], dim=1)
+    Re_norm = (Re - config.Re_min) / (config.Re_max - config.Re_min)
+    inp = torch.cat([r / config.R, x / config.L, Re_norm], dim=1)
     out = model(inp)
     u = out[:, 0:1]
     v = out[:, 1:2]
@@ -121,7 +123,8 @@ def bc_wall_u(
     Returns:
         Tensor of shape (N, 1) containing u(R, x) for each sample (target: 0).
     """
-    inp = torch.cat([r_wall / config.R, x_bc / config.L, Re_bc], dim=1)
+    Re_norm = (Re_bc - config.Re_min) / (config.Re_max - config.Re_min)
+    inp = torch.cat([r_wall / config.R, x_bc / config.L, Re_norm], dim=1)
     out = model(inp)
     return out[:, 0:1]
 
@@ -145,7 +148,8 @@ def bc_wall_v(
     Returns:
         Tensor of shape (N, 1) containing v(R, x) for each sample (target: 0).
     """
-    inp = torch.cat([r_wall / config.R, x_bc / config.L, Re_bc], dim=1)
+    Re_norm = (Re_bc - config.Re_min) / (config.Re_max - config.Re_min)
+    inp = torch.cat([r_wall / config.R, x_bc / config.L, Re_norm], dim=1)
     out = model(inp)
     return out[:, 1:2]
 
@@ -170,7 +174,8 @@ def bc_symmetry_u(
         Tensor of shape (N, 1) containing du/dr at r = 0 for each sample (target: 0).
     """
     r_sym = r_sym.requires_grad_(True)
-    inp = torch.cat([r_sym / config.R, x_bc / config.L, Re_bc], dim=1)
+    Re_norm = (Re_bc - config.Re_min) / (config.Re_max - config.Re_min)
+    inp = torch.cat([r_sym / config.R, x_bc / config.L, Re_norm], dim=1)
     out = model(inp)
     u = out[:, 0:1]
     return grad(u, r_sym)
@@ -195,7 +200,8 @@ def bc_inlet_u(
     Returns:
         Tensor of shape (N, 1) containing u(r, 0) - U_in for each sample (target: 0).
     """
-    inp = torch.cat([r_inlet / config.R, x_inlet / config.L, Re_bc], dim=1)
+    Re_norm = (Re_bc - config.Re_min) / (config.Re_max - config.Re_min)
+    inp = torch.cat([r_inlet / config.R, x_inlet / config.L, Re_norm], dim=1)
     out = model(inp)
     u_pred = out[:, 0:1]
     u_in = _get_u_in(Re_bc, config.nu, config.R)
