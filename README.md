@@ -6,7 +6,7 @@ Physics-Informed Neural Networks (PINNs) in PyTorch for laminar pipe flow, spann
 ![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)
 
-> **TL;DR**: Solves Navier-Stokes and boundary layer equations without simulation data by minimizing PDE residuals via PyTorch autograd. Supports soft boundary penalties and exact hard boundary conditions (`HardBCMLP`). The 1D SOTA model reaches **$5.34 \times 10^{-8}$ $L_2$ error** ($0.000007\%$ relative error). The 2D formulation models coupled velocity fields $(u, v)$ across Reynolds numbers $Re \in [100, 500]$ in the entrance region. Explore models live in the interactive web dashboard.
+> **TL;DR**: Solves Navier-Stokes and boundary layer equations without simulation data by minimizing PDE residuals via PyTorch autograd. Enforces wall and symmetry boundary conditions via penalty terms. The 1D model achieves an $L_2$ error of **$0.0016$** (**$0.19\%$** relative error) using a hybrid optimizer. The 2D formulation models coupled velocity fields $(u, v)$ across Reynolds numbers $Re \in [100, 500]$ in the entrance region. Explore models live in the interactive web dashboard.
 
 ---
 
@@ -26,7 +26,7 @@ streamlit run dashboard/app.py
 
 The dashboard includes a **Formulation Suite Selector** to explore both physical regimes:
 
-- **1D Hagen-Poiseuille Flow Suite (`exp_001`–`exp_028`)**:
+- **1D Hagen-Poiseuille Flow Suite (`exp_001`–`exp_027`)**:
   - **Live Analytical Comparison**: Evaluates PINN velocity predictions against the exact parabolic solution $u(r) = u_{\max} (1 - r^2/R^2)$.
   - **Interactive Controls**: Real-time sliders for pipe radius $R$ and centerline velocity $u_{\max} \in [0.5, 2.0]$.
   - **Quantitative Diagnostics**: $L_2$ error, maximum absolute error, relative $L_2$ error, pointwise residual plots, and parameter sensitivity curves.
@@ -55,9 +55,11 @@ pip install -e ".[dev]"    # With test & development dependencies
 
 ### 2. Train a Model
 
-**Train the 1D SOTA hard boundary condition model:**
+**Train the 1D model (e.g. deeper network or hybrid optimizer):**
 ```bash
-python scripts/train.py --config configs/experiments/exp_028_hard_bc.yaml --device cuda
+python scripts/train.py --config configs/experiments/exp_009_deeper_network.yaml --device cuda
+# Or hybrid Adam -> L-BFGS:
+python scripts/train.py --config configs/experiments/exp_026_hybrid_adam_lbfgs.yaml --device cuda
 ```
 
 **Train the 2D developing pipe flow model:**
@@ -93,15 +95,15 @@ pytest
 
 ```
 pinn-pipe-flow/
-├── configs/            # base.yaml + 30 experiment configs (exp_001 to exp_030)
+├── configs/            # base.yaml + experiment configs (exp_001 to exp_030)
 ├── dashboard/          # Streamlit web app (app.py, requirements.txt)
 ├── docs/               # Technical documentation
 │   ├── codebase_overview.md  # Architecture, modules, and complete results tables
 │   ├── experiments.md        # Experiment guide & phase-by-phase findings
-│   └── physics.md            # Hagen-Poiseuille derivation & hard BC proof
+│   └── physics.md            # Hagen-Poiseuille derivation & physical concepts
 ├── scripts/            # CLI tools (train.py, compare_runs.py)
 ├── src/pinn_pipe/      # Core Python package
-│   ├── models/         # Neural network architectures (BasePINN, MLP, HardBCMLP)
+│   ├── models/         # Neural network architectures (BasePINN, MLP)
 │   ├── physics/        # Governing equations (1D Hagen-Poiseuille & 2D developing flow)
 │   ├── training/       # 1D/2D collocation samplers, multi-objective losses, schedulers, trainer
 │   ├── evaluation/     # Metrics, 1D/2D profile and field evaluators
@@ -127,7 +129,7 @@ Exact analytical parabolic solution:
 
 $$u(r) = u_{\max} \left( 1 - \frac{r^2}{R^2} \right), \quad \text{where } u_{\max} = -\frac{R^2}{4\mu}\frac{dp}{dz}$$
 
-For the hard boundary condition proof guaranteeing $u(R)=0$ and $u'(0)=0$ by network construction, see [`docs/physics.md`](docs/physics.md).
+For complete mathematical derivations and boundary condition treatments, see [`docs/physics.md`](docs/physics.md).
 
 ### 2. 2D Axisymmetric Developing Pipe Flow (Entrance Region)
 
@@ -147,7 +149,7 @@ Boundary conditions:
 
 ## 📊 Results & Benchmarks
 
-The repository documents **30 systematic experiments across 10 structured phases**:
+The repository documents systematic experiments across structured phases:
 
 | Experiment | Flow Formulation | Key Highlights | $L_2$ Error | Relative Error | Key Takeaway |
 | :--- | :---: | :--- | :---: | :---: | :--- |
@@ -155,8 +157,8 @@ The repository documents **30 systematic experiments across 10 structured phases
 | `exp_006` | 1D | Extended training (64k epochs) | 0.0021 | 0.52% | Error halved every $2\times$ epochs |
 | `exp_009` | 1D | Deep MLP (Depth 6, Width 32) | 0.0015 | 0.24% | Optimal network geometry |
 | `exp_025` | 1D | Cosine annealing LR scheduler | 0.0019 | 0.22% | Smooth terminal convergence |
-| `exp_026` | 1D | Hybrid Adam $\to$ L-BFGS | 0.0016 | 0.19% | **Best Soft-BC model** |
-| `exp_028` | 1D | **Hard BC (`HardBCMLP`)** | **$5.34 \times 10^{-8}$** | **$0.000007\%$** | **1D SOTA**: Exact BCs eliminate 99.999% error |
+| `exp_026` | 1D | Hybrid Adam $\to$ L-BFGS | 0.0016 | 0.19% | **Best 1D Model**: Smooth second-order fine-tuning |
+| `exp_027` | 1D | SiLU activation function | 0.0025 | 0.46% | Smooth non-saturating non-linearity |
 | `exp_029` | 2D | Baseline Developing Flow | — | — | Coupled $(u, v)$ boundary layer solver |
 | `exp_030` | 2D | Scaled Developing Flow (Depth 6, 64k epochs) | — | — | High-capacity non-linear boundary layer resolution |
 
