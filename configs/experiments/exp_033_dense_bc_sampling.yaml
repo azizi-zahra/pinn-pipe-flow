@@ -1,0 +1,26 @@
+# =============================================================================
+# exp_033_dense_bc_sampling.yaml -- tests denser boundary condition sampling.
+# Evaluates whether sampling more points on the boundaries (4000 on wall and inlet)
+# relative to the interior domain (2000) improves boundary enforcement and stability.
+# =============================================================================
+
+metadata:
+  name: "exp_033_dense_bc_sampling"
+  description: "Test higher BC sampling density with 4000 points on wall and inlet, 2000 on interior and symmetry. Balanced loss weights from exp_032."
+
+overrides:
+  model:
+    hidden_layer_depth: 6
+  sampling:
+    num_interior_points: 2000
+    num_bc_wall_points: 4000
+    num_bc_inlet_points: 4000
+    num_bc_symmetry_points: 2000
+  training:
+    epochs: 30000
+    loss_weight_physics: 1.0
+    loss_weight_continuity: 1.0
+    loss_weight_bc_wall: 10.0
+    loss_weight_bc_wall_v: 10.0
+    loss_weight_bc_symmetry: 1.0
+    loss_weight_bc_inlet: 10.0
