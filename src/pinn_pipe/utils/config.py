@@ -31,7 +31,35 @@ class ModelConfig:
 
 @dataclass
 class SamplingConfig:
+    """Configuration for collocation and boundary point sampling.
+
+    Attributes:
+        num_interior_points: Collocation points sampled in interior of domain.
+        num_bc_points: Optional fallback point count for all boundary conditions.
+        num_bc_wall_points: Points sampled at the pipe wall r = R.
+        num_bc_symmetry_points: Points sampled at the centerline r = 0.
+        num_bc_inlet_points: Points sampled at the inlet x = 0.
+    """
+
     num_interior_points: int
+    num_bc_points: Optional[int] = None
+    num_bc_wall_points: Optional[int] = None
+    num_bc_symmetry_points: Optional[int] = None
+    num_bc_inlet_points: Optional[int] = None
+
+    def __post_init__(self) -> None:
+        """Resolves boundary condition point counts with fallbacks."""
+        default_bc = (
+            self.num_bc_points
+            if self.num_bc_points is not None
+            else self.num_interior_points
+        )
+        if self.num_bc_wall_points is None:
+            self.num_bc_wall_points = default_bc
+        if self.num_bc_symmetry_points is None:
+            self.num_bc_symmetry_points = default_bc
+        if self.num_bc_inlet_points is None:
+            self.num_bc_inlet_points = default_bc
 
 
 @dataclass
@@ -117,6 +145,10 @@ def load_config(base_path: str, experiment_path: str) -> Config:
         ),
         sampling=SamplingConfig(
             num_interior_points=base_data["sampling"]["num_interior_points"],
+            num_bc_points=base_data["sampling"].get("num_bc_points"),
+            num_bc_wall_points=base_data["sampling"].get("num_bc_wall_points"),
+            num_bc_symmetry_points=base_data["sampling"].get("num_bc_symmetry_points"),
+            num_bc_inlet_points=base_data["sampling"].get("num_bc_inlet_points"),
         ),
         training=TrainingConfig(
             epochs=base_data["training"]["epochs"],
@@ -199,3 +231,28 @@ def validate_config(config: Config) -> None:
                 f"hybrid_switch_epoch must be between 1 and epochs ({config.training.epochs}), "
                 f"got {config.training.hybrid_switch_epoch}"
             )
+
+    if config.sampling.num_interior_points <= 0:
+        raise ValueError(
+            f"num_interior_points must be positive, got {config.sampling.num_interior_points}"
+        )
+
+    if config.sampling.num_bc_points is not None and config.sampling.num_bc_points <= 0:
+        raise ValueError(
+            f"num_bc_points must be positive, got {config.sampling.num_bc_points}"
+        )
+
+    if config.sampling.num_bc_wall_points <= 0:
+        raise ValueError(
+            f"num_bc_wall_points must be positive, got {config.sampling.num_bc_wall_points}"
+        )
+
+    if config.sampling.num_bc_symmetry_points <= 0:
+        raise ValueError(
+            f"num_bc_symmetry_points must be positive, got {config.sampling.num_bc_symmetry_points}"
+        )
+
+    if config.sampling.num_bc_inlet_points <= 0:
+        raise ValueError(
+            f"num_bc_inlet_points must be positive, got {config.sampling.num_bc_inlet_points}"
+        )

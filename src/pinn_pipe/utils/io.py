@@ -181,6 +181,26 @@ def load_run_config(run_dir: str) -> Config:
     sampling_data = data.get("sampling", {})
     sampling = SamplingConfig(
         num_interior_points=int(sampling_data["num_interior_points"]),
+        num_bc_points=(
+            int(sampling_data["num_bc_points"])
+            if sampling_data.get("num_bc_points") is not None
+            else None
+        ),
+        num_bc_wall_points=(
+            int(sampling_data["num_bc_wall_points"])
+            if sampling_data.get("num_bc_wall_points") is not None
+            else None
+        ),
+        num_bc_symmetry_points=(
+            int(sampling_data["num_bc_symmetry_points"])
+            if sampling_data.get("num_bc_symmetry_points") is not None
+            else None
+        ),
+        num_bc_inlet_points=(
+            int(sampling_data["num_bc_inlet_points"])
+            if sampling_data.get("num_bc_inlet_points") is not None
+            else None
+        ),
     )
 
     training_data = data.get("training", {})

@@ -19,6 +19,10 @@ model:
 
 sampling:
   num_interior_points: 2000   # collocation points sampled in the 2D domain
+  num_bc_points: null         # optional fallback for all BC points
+  num_bc_wall_points: null    # points sampled at wall r = R (defaults to num_bc_points or num_interior_points)
+  num_bc_symmetry_points: null # points sampled at centerline r = 0
+  num_bc_inlet_points: null   # points sampled at inlet x = 0
 
 training:
   epochs: 10000

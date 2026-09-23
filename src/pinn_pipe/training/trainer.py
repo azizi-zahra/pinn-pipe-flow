@@ -144,15 +144,15 @@ class Trainer:
                     config=self.config.physics,
                 )
                 r_wall_fixed, x_bc_wall_fixed, Re_bc_wall_fixed = sample_bc_wall(
-                    n=self.config.sampling.num_interior_points,
+                    n=self.config.sampling.num_bc_wall_points,
                     config=self.config.physics,
                 )
                 r_sym_fixed, x_bc_sym_fixed, Re_bc_sym_fixed = sample_bc_symmetry(
-                    n=self.config.sampling.num_interior_points,
+                    n=self.config.sampling.num_bc_symmetry_points,
                     config=self.config.physics,
                 )
                 r_inlet_fixed, x_inlet_fixed, Re_bc_inlet_fixed = sample_bc_inlet(
-                    n=self.config.sampling.num_interior_points,
+                    n=self.config.sampling.num_bc_inlet_points,
                     config=self.config.physics,
                 )
 
@@ -189,15 +189,15 @@ class Trainer:
                     config=self.config.physics,
                 )
                 r_wall, x_bc_wall, Re_bc_wall = sample_bc_wall(
-                    n=self.config.sampling.num_interior_points,
+                    n=self.config.sampling.num_bc_wall_points,
                     config=self.config.physics,
                 )
                 r_sym, x_bc_sym, Re_bc_sym = sample_bc_symmetry(
-                    n=self.config.sampling.num_interior_points,
+                    n=self.config.sampling.num_bc_symmetry_points,
                     config=self.config.physics,
                 )
                 r_inlet, x_inlet, Re_bc_inlet = sample_bc_inlet(
-                    n=self.config.sampling.num_interior_points,
+                    n=self.config.sampling.num_bc_inlet_points,
                     config=self.config.physics,
                 )
 
