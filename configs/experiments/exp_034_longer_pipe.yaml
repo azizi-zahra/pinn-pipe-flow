@@ -1,0 +1,31 @@
+# =============================================================================
+# exp_034_longer_pipe.yaml -- tests longer pipe length (L=60.0 m vs L=20.0 m).
+# For Re=500 and R=1.0, entry length is Le ~ 0.1 * Re * R = 50.0 m.
+# With L=20.0 m in exp_033, higher Re flows do not have enough axial distance
+# to fully develop into the Hagen-Poiseuille profile.
+# L=60.0 m provides sufficient distance for full development across all Re (100-500).
+# All other parameters are identical to exp_033 for direct comparison.
+# =============================================================================
+
+metadata:
+  name: "exp_034_longer_pipe"
+  description: "Test longer pipe length L=60.0m (vs L=20.0m in exp_033) allowing full flow development up to Re=500. Denser BC sampling and depth 6."
+
+overrides:
+  physics:
+    L: 60.0
+  model:
+    hidden_layer_depth: 6
+  sampling:
+    num_interior_points: 2000
+    num_bc_wall_points: 4000
+    num_bc_inlet_points: 4000
+    num_bc_symmetry_points: 2000
+  training:
+    epochs: 30000
+    loss_weight_physics: 1.0
+    loss_weight_continuity: 1.0
+    loss_weight_bc_wall: 10.0
+    loss_weight_bc_wall_v: 10.0
+    loss_weight_bc_symmetry: 1.0
+    loss_weight_bc_inlet: 10.0
